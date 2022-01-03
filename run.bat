@@ -49,7 +49,7 @@ echo "||| Создание загрузочного образа |||"
 copy /B %BootBin%+%KernelBin% %BootImage%
 
 echo "||| Запуск QEMU |||"
-qemu-system-i386 -fda %BootImage% -L "%QemuDir%"
+start qemu-system-i386 -s -S -fda %BootImage% -L "%QemuDir%"
 
 echo "||| Запуск GDB |||"
-%GDB% -ex "symbol-file %KernelElf%"
+%GDB%  -ex "target remote localhost:1234" -ex "symbol-file %KernelElf%"
