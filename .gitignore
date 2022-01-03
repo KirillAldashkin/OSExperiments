@@ -1,0 +1,6 @@
+# Visual Studio files
+.vs
+# Build files
+build
+# GNU tools
+tools
