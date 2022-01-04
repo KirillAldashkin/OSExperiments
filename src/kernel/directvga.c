@@ -26,11 +26,11 @@
 #define AttrTextYellow     0b00001110
 #define AttrTextWhite      0b00001111
 
-typedef struct ConsoleChar_s
+typedef struct
 {
     char text;
     char attr;
 } ConsoleChar;
 
-#define TextVGAPtr (ConsoleChar(*)[25][80])0xb8000
-#define TextVGA (*TextVGAPtr)
+#define textVGAPtr (ConsoleChar(*)[25][80])0xb8000
+#define textVGA (*textVGAPtr)

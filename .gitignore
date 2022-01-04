@@ -2,5 +2,5 @@
 .vs
 # Build files
 build
-# GNU tools
-tools
+# Environment-specific settings
+kernel.proj.user

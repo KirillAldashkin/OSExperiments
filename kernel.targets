@@ -1,0 +1,46 @@
+<Project>
+	<ItemGroup>
+		<KernelCObj Include="@(KernelC->'build/obj/%(Filename).elf')"/>
+		<KernelAsmObj Include="@(KernelAsm->'build/obj/%(Filename).elf')"/>
+		<KernelObj Include="@(KernelCObj);@(KernelAsmObj)"/>
+		<OutputBin Include="build/**/*.bin"/>
+	</ItemGroup>
+	<Target Name="Run" DependsOnTargets="Build">
+		<PropertyGroup Condition="$(Debug)=='true'">
+			<DArgs>-s -S</DArgs>
+		</PropertyGroup>
+		<Exec Command="&quot;$(QemuPath)qemu-system-i386&quot; $(DArgs) -fda &quot;build/image.bin&quot; -L &quot;$(QemuPath)&quot;"/>
+	</Target>
+	<Target Name="Build" DependsOnTargets="CompileBoot;LinkKernel">
+		<Exec Command="cmd /C &quot;copy /B build\bin\boot.bin+build\bin\kernel.bin build\image.bin&quot;"/>
+	</Target>
+	<Target Name="CompileBoot" Inputs="@(BootAsm)" Outputs="build/bin/boot.bin">
+		<Exec Command="&quot;$(NasmPath)nasm&quot; -f bin src/boot/boot.asm -Isrc/boot/ -o build/bin/boot.bin"/>
+	</Target>
+	<Target Name="LinkKernel" DependsOnTargets="CompileKernelC;CompileKernelAsm" Inputs="@(KernelObj)" Outputs="build/bin/kernel.bin">
+		<!-- "entry.elf" должен быть первым в списке, поэтому добавляем его в начало, а потом удаляем повторы -->
+		<RemoveDuplicates Inputs="build/obj/entry.elf;@(KernelObj)">
+			<Output TaskParameter="Filtered" ItemName="FilteredObj"/>
+		</RemoveDuplicates>
+		<PropertyGroup>
+			<LDCmd>&quot;$(GNUPrefix)ld&quot; @(FilteredObj->'%(Fullpath)', ' ') $(LinkFlags) -o build/bin/</LDCmd>
+		</PropertyGroup>
+		<Exec Command="$(LDCmd)kernel.bin --oformat binary"/>
+		<Exec Command="$(LDCmd)kernel_symbols.elf" Condition="$(Debug)=='true'"/>
+	</Target>
+	<Target Name="CompileKernelC" Inputs="@(KernelC)" Outputs="@(KernelCObj)">
+		<PropertyGroup>
+			<DArg>$(CFlags) -Os</DArg>
+		</PropertyGroup>
+		<PropertyGroup Condition="$(Debug)=='true'">
+			<DArg>$(CFlags) -g</DArg>
+		</PropertyGroup>
+		<Exec Command="&quot;$(GNUPrefix)gcc&quot; $(DArg) -c %(KernelC.Identity) -o @(KernelC->'build/obj/%(Filename).elf'->'%(Identity)')"/>
+	</Target>
+	<Target Name="CompileKernelAsm" Inputs="@(KernelAsm)" Outputs="@(KernelAsmObj)">
+		<Exec Command="&quot;$(NasmPath)nasm&quot; %(KernelAsm.Identity) -f elf32 -o @(KernelAsm->'build/obj/%(Filename).elf'->'%(Identity)')"/>
+	</Target>
+	<Target Name="Clean">
+		<Delete Files="@(KernelObj);@(OutputBin)"/>
+	</Target>
+</Project>
