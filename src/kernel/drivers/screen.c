@@ -4,7 +4,7 @@
 
 #define videoMem ((ConsoleChar*)0xb8000)
 
-// Приватное API
+// РџСЂРёРІР°С‚РЅРѕРµ API
 uint16 getCursorOffset() {
 	PortOut8(0x3d4, 14);
 	uint16 pos = PortIn8(0x3d5) << 8;
@@ -19,7 +19,7 @@ void setCursorOffset(uint16 offset) {
 	PortOut8(0x3d5, (uint8)(offset & 0xFF));
 }
 
-// Публичное API
+// РџСѓР±Р»РёС‡РЅРѕРµ API
 void SetCursor(uint8 x, uint8 y) { setCursorOffset(x + y * MaxCols); }
 
 void Write(string message) { 
@@ -31,8 +31,8 @@ void Write(string message) {
 void WriteLine(string message) {
 	uint16 pos = getCursorOffset();
 	while (*message != 0) videoMem[pos++].text = *(message++);
-	// pos    = y * MaxCols + x => позиция после вывода текста 
-	// newPos = (y+1) * MaxCols => берём ближайшее число (>= pos), которое кратно MaxCols
+	// pos    = y * MaxCols + x => РїРѕР·РёС†РёСЏ РїРѕСЃР»Рµ РІС‹РІРѕРґР° С‚РµРєСЃС‚Р° 
+	// newPos = (y+1) * MaxCols => Р±РµСЂС‘Рј Р±Р»РёР¶Р°Р№С€РµРµ С‡РёСЃР»Рѕ (>= pos), РєРѕС‚РѕСЂРѕРµ РєСЂР°С‚РЅРѕ MaxCols
 	setCursorOffset((pos-1+MaxCols)/MaxCols*MaxCols);
 }
 

@@ -1,6 +1,6 @@
 #include "../types.h"
 
-// Аттрибуты
+// РђС‚С‚СЂРёР±СѓС‚С‹
 #define AttrBlink          0b10000000
 #define AttrBackBlack      0b00000000
 #define AttrBackBlue       0b00010000
@@ -27,7 +27,7 @@
 #define AttrTextYellow     0b00001110
 #define AttrTextWhite      0b00001111
 
-// Константы
+// РљРѕРЅСЃС‚Р°РЅС‚С‹
 #define MaxRows 25
 #define MaxCols 80
 #define Screen (*(ConsoleChar(*)[MaxRows][MaxCols])0xb8000)
@@ -38,13 +38,13 @@ typedef struct
     uint8 attr;
 } ConsoleChar;
 
-// Публичное API
+// РџСѓР±Р»РёС‡РЅРѕРµ API
 
-// Очищает экран и сбрасывает положение курсора.
+// РћС‡РёС‰Р°РµС‚ СЌРєСЂР°РЅ Рё СЃР±СЂР°СЃС‹РІР°РµС‚ РїРѕР»РѕР¶РµРЅРёРµ РєСѓСЂСЃРѕСЂР°.
 void ClearScreen();
-// Перемещает курсор в заданное положение.
+// РџРµСЂРµРјРµС‰Р°РµС‚ РєСѓСЂСЃРѕСЂ РІ Р·Р°РґР°РЅРЅРѕРµ РїРѕР»РѕР¶РµРЅРёРµ.
 void SetCursor(uint8 x, uint8 y);
-// Выводит текст на экран.
+// Р’С‹РІРѕРґРёС‚ С‚РµРєСЃС‚ РЅР° СЌРєСЂР°РЅ.
 void Write(string message);
-// Выводит текст на экран, добавляя перенос строки.
+// Р’С‹РІРѕРґРёС‚ С‚РµРєСЃС‚ РЅР° СЌРєСЂР°РЅ, РґРѕР±Р°РІР»СЏСЏ РїРµСЂРµРЅРѕСЃ СЃС‚СЂРѕРєРё.
 void WriteLine(string message);
