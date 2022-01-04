@@ -1,4 +1,5 @@
 #include "../types.h"
+#include "../util.h"
 #include "screen.h"
 #include "ports.h"
 
@@ -18,22 +19,43 @@ void setCursorOffset(uint16 offset) {
 	PortOut8(0x3d4, 15);
 	PortOut8(0x3d5, (uint8)(offset & 0xFF));
 }
+void scroll() {
+	for (uint8 i = 1; i < MaxRows; i++)
+		CopyMemory(videoMem + MaxCols * i,
+			       videoMem + MaxCols * (i-1),
+			       MaxCols * 2);
+	for (uint16 i = MaxCols * (MaxRows - 1); i < MaxCols * MaxRows; i++) {
+		videoMem[i].text = ' ';
+		videoMem[i].attr = AttrBackBlack | AttrTextGray;
+	}
+}
 
 // Публичное API
 void SetCursor(uint8 x, uint8 y) { setCursorOffset(x + y * MaxCols); }
 
 void Write(string message) { 
 	uint16 pos = getCursorOffset();
-	while (*message != 0) videoMem[pos++].text = *(message++);
+	while (*message != 0) { 
+		videoMem[pos++].text = *(message++); 
+		if (pos >= MaxCols * MaxRows) {
+			pos -= MaxCols;
+			scroll();
+		}
+	}
 	setCursorOffset(pos);
 }
 
 void WriteLine(string message) {
-	uint16 pos = getCursorOffset();
-	while (*message != 0) videoMem[pos++].text = *(message++);
+	Write(message);
 	// pos    = y * MaxCols + x => позиция после вывода текста 
 	// newPos = (y+1) * MaxCols => берём ближайшее число (>= pos), которое кратно MaxCols
-	setCursorOffset((pos-1+MaxCols)/MaxCols*MaxCols);
+	uint16 pos = getCursorOffset();
+	pos = (pos-1+MaxCols)/MaxCols*MaxCols;
+	if (pos >= MaxCols*MaxRows) {
+		pos -= MaxCols;
+		scroll();
+	}
+	setCursorOffset(pos);
 }
 
 void ClearScreen() {

@@ -11,7 +11,7 @@
 		</PropertyGroup>
 		<Exec Command="&quot;$(QemuPath)qemu-system-i386&quot; $(DArgs) -fda &quot;build/image.bin&quot; -L &quot;$(QemuPath)&quot;"/>
 	</Target>
-	<Target Name="Build" DependsOnTargets="CompileBoot;LinkKernel">
+	<Target Name="Build" DependsOnTargets="CompileBoot;LinkKernel" Inputs="@(OutputBin)" Outputs="build/image.bin">
 		<Exec Command="cmd /C &quot;copy /B build\bin\boot.bin+build\bin\kernel.bin build\image.bin&quot;"/>
 	</Target>
 	<Target Name="CompileBoot" Inputs="@(BootAsm)" Outputs="build/bin/boot.bin">
