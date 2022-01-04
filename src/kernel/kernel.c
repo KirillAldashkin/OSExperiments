@@ -1,5 +1,7 @@
-#include "directvga.c"
+#include "drivers/screen.h"
 
 void main() {
-	textVGA[0][0].text = 'H';
+	ClearScreen();
+	WriteLine("Hello ^-^");
+	Write("  Hello again!");
 }

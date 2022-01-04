@@ -1,5 +1,7 @@
-#define AttrBlink          0b10000000
+#include "../types.h"
 
+// Аттрибуты
+#define AttrBlink          0b10000000
 #define AttrBackBlack      0b00000000
 #define AttrBackBlue       0b00010000
 #define AttrBackGreen      0b00100000
@@ -8,7 +10,6 @@
 #define AttrBackMagenta    0b01010000
 #define AttrBackBrown      0b01100000
 #define AttrBackGray       0b01110000
-
 #define AttrTextBlack      0b00000000
 #define AttrTextBlue       0b00000001
 #define AttrTextGreen      0b00000010
@@ -26,11 +27,24 @@
 #define AttrTextYellow     0b00001110
 #define AttrTextWhite      0b00001111
 
+// Константы
+#define MaxRows 25
+#define MaxCols 80
+#define Screen (*(ConsoleChar(*)[MaxRows][MaxCols])0xb8000)
+
 typedef struct
 {
     char text;
-    char attr;
+    uint8 attr;
 } ConsoleChar;
 
-#define textVGAPtr (ConsoleChar(*)[25][80])0xb8000
-#define textVGA (*textVGAPtr)
+// Публичное API
+
+// Очищает экран и сбрасывает положение курсора.
+void ClearScreen();
+// Перемещает курсор в заданное положение.
+void SetCursor(uint8 x, uint8 y);
+// Выводит текст на экран.
+void Write(string message);
+// Выводит текст на экран, добавляя перенос строки.
+void WriteLine(string message);

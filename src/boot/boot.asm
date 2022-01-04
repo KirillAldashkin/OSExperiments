@@ -14,7 +14,7 @@ LoadKernel:
 	mov bx, LoadKernStr  ; Выводим сообщение
 	call WriteLine
 	mov bx, KernOffs     ; По "этому" адресу...
-	mov dh, 2            ; ...необходимо прочитать 2 сектора...
+	mov dh, 8            ; ...необходимо прочитать 8 секторов...
 	mov dl, [BootDisk]   ; ...с "этого" устройства.
 	call DiskLoad        ; Грузим!
 	ret
@@ -29,6 +29,7 @@ StartProMode:            ; Точка входа в защищённый реж�
 	mov ebx, ProtModeStr ; Выводим сообщение
 	call WriteProt
 	call 0x7e00          ; Передаём управление ядру
+	jmp $
 
 BootDisk: db 0
 RealModeStr: db 'Started in 16-bit real mode.', 0

@@ -41,6 +41,6 @@
 		<Exec Command="&quot;$(NasmPath)nasm&quot; %(KernelAsm.Identity) -f elf32 -o @(KernelAsm->'build/obj/%(Filename).elf'->'%(Identity)')"/>
 	</Target>
 	<Target Name="Clean">
-		<Delete Files="@(KernelObj);@(OutputBin)"/>
+		<Delete Files="@(KernelObj);@(OutputBin);build/bin/kernel_symbols.elf"/>
 	</Target>
 </Project>
