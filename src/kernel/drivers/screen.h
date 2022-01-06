@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../types.h"
 
 // Аттрибуты
@@ -32,16 +34,20 @@
 #define MaxCols 80
 #define Screen (*(ConsoleChar(*)[MaxRows][MaxCols])0xb8000)
 
-typedef struct
-{
+typedef struct {
     char text;
     uint8 attr;
 } ConsoleChar;
+typedef struct {
+    uint8 x, y;
+} Position;
 
 // Публичное API
 
 // Очищает экран и сбрасывает положение курсора.
 void ClearScreen();
+// Возвращает позицию курсора.
+Position GetCursor();
 // Перемещает курсор в заданное положение.
 void SetCursor(uint8 x, uint8 y);
 // Выводит текст на экран.

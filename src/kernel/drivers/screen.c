@@ -32,7 +32,13 @@ void scroll() {
 
 // Публичное API
 void SetCursor(uint8 x, uint8 y) { setCursorOffset(x + y * MaxCols); }
-
+Position GetCursor() {
+	Position pos;
+	uint16 raw = getCursorOffset();
+	pos.x = raw % MaxCols;
+	pos.y = raw / MaxCols;
+	return pos;
+}
 void Write(string message) { 
 	uint16 pos = getCursorOffset();
 	while (*message != 0) { 

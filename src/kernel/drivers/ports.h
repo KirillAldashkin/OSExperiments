@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../types.h"
 
 uint8 PortIn8(uint16 port);
