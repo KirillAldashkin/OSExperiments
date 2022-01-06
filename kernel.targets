@@ -26,11 +26,10 @@
 			<LDCmd>&quot;$(GNUPrefix)ld&quot; @(FilteredObj->'%(Fullpath)', ' ') $(LinkFlags) -o build/</LDCmd>
 		</PropertyGroup>
 		<Exec Command="$(LDCmd)bin/kernel.bin --oformat binary"/>
-		<Exec Command="$(LDCmd)kernel.elf" Condition="$(Debug)=='true'"/>
+		<Exec Command="$(LDCmd)symbols.elf" Condition="$(Debug)=='true'"/>
 	</Target>
 	<Target Name="CompileKernelC" Inputs="@(KernelC)" Outputs="@(KernelCObj)">
 		<PropertyGroup>
-			<!-- TODO вернуть -Os, оптимизация ломает ISR и IRQ -->
 			<DArg>$(CFlags)</DArg>
 		</PropertyGroup>
 		<PropertyGroup Condition="$(Debug)=='true'">

@@ -1,71 +1,89 @@
-#include "../types.h"
-#include "../util.h"
 #include "screen.h"
 #include "ports.h"
+#include "../libc/mem.h"
 
 #define videoMem ((ConsoleChar*)0xb8000)
 
 // Приватное API
-uint16 getCursorOffset() {
+uint16_t getCursorOffset() {
 	PortOut8(0x3d4, 14);
-	uint16 pos = PortIn8(0x3d5) << 8;
+	uint16_t pos = PortIn8(0x3d5) << 8;
 	PortOut8(0x3d4, 15);
 	pos += PortIn8(0x3d5);
 	return pos;
 }
-void setCursorOffset(uint16 offset) {
+void setCursorOffset(uint16_t offset) {
 	PortOut8(0x3d4, 14);
-	PortOut8(0x3d5, (uint8)(offset >> 8));
+	PortOut8(0x3d5, (uint8_t)(offset >> 8));
 	PortOut8(0x3d4, 15);
-	PortOut8(0x3d5, (uint8)(offset & 0xFF));
+	PortOut8(0x3d5, (uint8_t)(offset & 0xFF));
 }
 void scroll() {
-	for (uint8 i = 1; i < MaxRows; i++)
-		CopyMemory(videoMem + MaxCols * i,
-			       videoMem + MaxCols * (i-1),
-			       MaxCols * 2);
-	for (uint16 i = MaxCols * (MaxRows - 1); i < MaxCols * MaxRows; i++) {
+	for (uint8_t i = 1; i < MaxRows; i++)
+		memcpy(videoMem + MaxCols * (i-1),
+			   videoMem + MaxCols * i,
+			   MaxCols * 2);
+	for (uint16_t i = MaxCols * (MaxRows - 1); i < MaxCols * MaxRows; i++) {
 		videoMem[i].text = ' ';
 		videoMem[i].attr = AttrBackBlack | AttrTextGray;
 	}
 }
 
 // Публичное API
-void SetCursor(uint8 x, uint8 y) { setCursorOffset(x + y * MaxCols); }
+void SetCursor(uint8_t x, uint8_t y) { setCursorOffset(x + y * MaxCols); }
 Position GetCursor() {
 	Position pos;
-	uint16 raw = getCursorOffset();
+	uint16_t raw = getCursorOffset();
 	pos.x = raw % MaxCols;
 	pos.y = raw / MaxCols;
 	return pos;
 }
+
 void Write(string message) { 
-	uint16 pos = getCursorOffset();
+	uint16_t pos = getCursorOffset();
 	while (*message != 0) { 
-		videoMem[pos++].text = *(message++); 
-		if (pos >= MaxCols * MaxRows) {
-			pos -= MaxCols;
-			scroll();
+		if (*message == '\n') {
+			NewLine();
+			pos = getCursorOffset();
+			++message;
+		} else {
+			videoMem[pos++].text = *(message++);
+			if (pos >= MaxCols * MaxRows) {
+				pos -= MaxCols;
+				scroll();
+			}
 		}
 	}
 	setCursorOffset(pos);
 }
-
+void WriteChar(char c)
+{
+	uint16_t pos = getCursorOffset();
+	videoMem[pos].text = c;
+	setCursorOffset(++pos);
+}
 void WriteLine(string message) {
 	Write(message);
-	// pos    = y * MaxCols + x => позиция после вывода текста 
-	// newPos = (y+1) * MaxCols => берём ближайшее число (>= pos), которое кратно MaxCols
-	uint16 pos = getCursorOffset();
-	pos = (pos-1+MaxCols)/MaxCols*MaxCols;
-	if (pos >= MaxCols*MaxRows) {
-		pos -= MaxCols;
+	NewLine();
+}
+void NewLine()
+{
+	Position pos = GetCursor();
+	SetCursor(0, pos.y + 1);
+	if (pos.y >= MaxRows) {
 		scroll();
+		SetCursor(0, MaxRows - 1);
 	}
+}
+void Back()
+{
+	uint16_t pos = getCursorOffset()-1;
+	videoMem[pos].text = ' ';
+	videoMem[pos].attr = AttrBackBlack | AttrTextGray;
 	setCursorOffset(pos);
 }
-
 void ClearScreen() {
-	for (uint16 i = 0; i < MaxCols * MaxRows; i++)
+	for (uint16_t i = 0; i < MaxCols * MaxRows; i++)
 	{
 		videoMem[i].text = ' ';
 		videoMem[i].attr = AttrBackBlack | AttrTextGray;

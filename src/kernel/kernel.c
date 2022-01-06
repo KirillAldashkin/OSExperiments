@@ -2,10 +2,60 @@
 #include "hardware/timer.h"
 #include "drivers/screen.h"
 #include "drivers/keyboard.h"
+#include "libc/string.h"
+#include "libc/stdlib.h"
+#include "libc/mem.h"
+#include "char.h"
 
-void main() {
-    SetupInterrupts();
-    asm volatile("sti");
+void Command(string cmd);
+void Char(char c);
+
+void KernelEntry() {
     ClearScreen();
-    InitKeyboard();
+    SetupInterrupts();
+    SetupIRQ();
+    SetCharHandler(Char);
+    SetStringHandler(Command);
+    WriteLine("Welcome to... need to come up with a name...");
+    WriteLine("Write 'help' to get more info.");
+}
+
+void Char(char c) {
+    if (c == 0) {
+        Back();
+    } else {
+        WriteChar(c);
+    }
+}
+
+const string helpstr = "\
+help - prints this message\n\
+clear - clears the screen\n\
+ticks - prints tick count\n\
+crash - divides by zero :)";
+
+void Command(string cmd) {
+    ToSmallStr(cmd);
+    NewLine();
+    if (strcmp("help", cmd) == 0) {
+        WriteLine(helpstr);
+    } else if (strcmp("clear", cmd) == 0) {
+        ClearScreen();
+    } else if (strcmp("hello", cmd) == 0) {
+        WriteLine("Hi! ^-^");
+    } else if (strcmp("ticks", cmd) == 0) {
+        string res = "            ";
+        memset(res, ' ', 12);
+        itoa(GetTicks(), res, 10);
+        WriteLine(res);
+    } else if (strcmp("crash", cmd) == 0) {
+        volatile int a = 0;
+        volatile int b = 0;
+        volatile int c = a / b;
+    }
+    else {
+        Write("Unknown command: \"");
+        Write(cmd);
+        WriteLine("\"");
+    }
 }

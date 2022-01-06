@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include <stdint.h>
 
 // Обработчики ошибок процессора
 extern void Isr0();
@@ -57,12 +57,13 @@ extern void Irq15();
 
 // Структура со всякими регистрами (и кодами ошибки)
 typedef struct {
-	uint32 Ds;
-	uint32 Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
-	uint32 InterruptNumber, ErrorCode;
-	uint32 Eip, Cs, EFlags, UserEsp, Ss;
+	uint32_t Ds;
+	uint32_t Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
+	uint32_t InterruptNumber, ErrorCode;
+	uint32_t Eip, Cs, EFlags, UserEsp, Ss;
 } Registers;
-typedef void(*InterruptHandler)(Registers);
+typedef void(*InterruptHandler)(Registers*);
 
 void SetupInterrupts();
-void SetInterruptHandler(uint8 index, InterruptHandler handler);
+void SetupIRQ();
+void SetInterruptHandler(uint8_t index, InterruptHandler handler);

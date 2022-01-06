@@ -1,7 +1,7 @@
 <Project DefaultTargets="Build">
 	<PropertyGroup>
 		<Debug>true</Debug>
-		<CFlags>-m32 -ffreestanding</CFlags>
+		<CFlags>-m32 -Os -ffreestanding -Wall -Wextra -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs</CFlags>
 		<LinkFlags>-melf_i386 -Ttext 0x7e00</LinkFlags>
 	</PropertyGroup>
 	<ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../types.h"
+#include <stdint.h>
 
 // Аттрибуты
 #define AttrBlink          0b10000000
@@ -36,10 +37,10 @@
 
 typedef struct {
     char text;
-    uint8 attr;
+    uint8_t attr;
 } ConsoleChar;
 typedef struct {
-    uint8 x, y;
+    uint8_t x, y;
 } Position;
 
 // Публичное API
@@ -49,8 +50,14 @@ void ClearScreen();
 // Возвращает позицию курсора.
 Position GetCursor();
 // Перемещает курсор в заданное положение.
-void SetCursor(uint8 x, uint8 y);
+void SetCursor(uint8_t x, uint8_t y);
+// Очищает текущий символ и переходит к предыдущему.
+void Back();
 // Выводит текст на экран.
 void Write(string message);
+// Выводит символ на экран.
+void WriteChar(char c);
 // Выводит текст на экран, добавляя перенос строки.
 void WriteLine(string message);
+// Переводит строку
+void NewLine();

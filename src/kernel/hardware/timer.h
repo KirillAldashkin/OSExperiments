@@ -1,5 +1,5 @@
 #pragma once
+#include <stdint.h>
 
-#include "../util.h"
-
-void InitTimer(uint32 frequency);
+void InitTimer(uint32_t frequency);
+uint32_t GetTicks();

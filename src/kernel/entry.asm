@@ -1,5 +1,7 @@
 ; Точка входа в ядро. Вызывает функцию 'main'
 [bits 32]
-[extern main]
-call main
-ret
+[extern KernelEntry]
+global _start
+_start:
+	call KernelEntry
+	ret
