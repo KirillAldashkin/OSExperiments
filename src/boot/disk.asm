@@ -29,5 +29,5 @@ ReadError:                      ; Если произошла ошибка, то
 	call WriteHex
 	jmp $
 
-ReadErrorStr: db 'Disk read error. Code|Disk: ', 0
-SectorCountErrorStr: db 'Incorrect number of sectors read. ', 0
+ReadErrorStr: db 'Read error. Code|Disk: ', 0
+SectorCountErrorStr: db 'Sectors count mismatch. ', 0

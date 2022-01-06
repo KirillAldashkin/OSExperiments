@@ -3,7 +3,9 @@ KernOffs equ 0x7e00
 
 Start:                   ; Точка входа
 	mov [BootDisk], dl   ; Запоминаем устройство, с которого загрузились
-	mov bp, 0x9000       ; Настраиваем стэк
+	mov bx, 0x8fc0       ; Настраиваем стэк: 0x9fc00 - 0x10 == 0x9fbf0 == 0x8fc0:fff0
+	mov ss, bx
+	mov bp, 0xfff0
 	mov sp, bp
 	mov bx, RealModeStr  ; Выводим сообщение
 	call WriteLine
@@ -14,7 +16,7 @@ LoadKernel:
 	mov bx, LoadKernStr  ; Выводим сообщение
 	call WriteLine
 	mov bx, KernOffs     ; По "этому" адресу...
-	mov dh, 8            ; ...необходимо прочитать 8 секторов...
+	mov dh, 31           ; ...необходимо прочитать 31 сектор...
 	mov dl, [BootDisk]   ; ...с "этого" устройства.
 	call DiskLoad        ; Грузим!
 	ret
@@ -32,9 +34,9 @@ StartProMode:            ; Точка входа в защищённый реж�
 	jmp $
 
 BootDisk: db 0
-RealModeStr: db 'Started in 16-bit real mode.', 0
-LoadKernStr: db 'Loading kernel to RAM...', 0
-ProtModeStr: db 'Now in 32-bit protected mode.', 0
+RealModeStr: db 'In real mode', 0
+LoadKernStr: db 'Loading kernel', 0
+ProtModeStr: db 'In protected mode', 0
 
 times 510-($-$$) db 0
 dw 0xaa55
