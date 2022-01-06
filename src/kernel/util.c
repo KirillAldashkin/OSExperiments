@@ -41,3 +41,9 @@ void ToString(int32 number, uint8 base, string to)
 	}
 	ReverseMemory(to, len);
 }
+
+uint16 Length(string str) {
+	char* end = str;
+	while (*end != 0) end++;
+	return end - str;
+}
