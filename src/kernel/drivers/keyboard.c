@@ -38,28 +38,28 @@ void KeyboardCallback(Registers* registers)
         down = 0;
         scancode -= 0x80;
     }
-    if (scancode > MaxScanCode) return; // ограничение по количеству кодов
-    if ((scancode == 0x2A) || (scancode == 0x36)) { // если Shift
+    if (scancode > MaxScanCode) return; // РѕРіСЂР°РЅРёС‡РµРЅРёРµ РїРѕ РєРѕР»РёС‡РµСЃС‚РІСѓ РєРѕРґРѕРІ
+    if ((scancode == 0x2A) || (scancode == 0x36)) { // РµСЃР»Рё Shift
         shift = down;
-    } else if ((scancode == 0x0E) && down) { // если Backspace
+    } else if ((scancode == 0x0E) && down) { // РµСЃР»Рё Backspace
         if (pos > 0) {
             pos--;
             if (charHandler != 0) charHandler(0);
         }
-    } else if ((scancode == 0x3A) && down) { // если CapsLock
+    } else if ((scancode == 0x3A) && down) { // РµСЃР»Рё CapsLock
         caps = !caps; 
-    } else if ((scancode == 0x1C) && down) { // если Enter
+    } else if ((scancode == 0x1C) && down) { // РµСЃР»Рё Enter
         buffer[pos] = '\0';
         if (stringHandler != 0) stringHandler(buffer);
         pos = 0;
-    } else if (!down) return; // не отслеживаем отпускания клавиш
+    } else if (!down) return; // РЅРµ РѕС‚СЃР»РµР¶РёРІР°РµРј РѕС‚РїСѓСЃРєР°РЅРёСЏ РєР»Р°РІРёС€
     char sym = ASCIIs[scancode];
     if (shift == caps) {
         sym = ToSmall(sym);
     } else {
         sym = ToCapital(sym);
     }
-    if (pos == 255 || IsSpecial(sym)) return; // проверка на переполнение и символ
+    if (pos == 255 || IsSpecial(sym)) return; // РїСЂРѕРІРµСЂРєР° РЅР° РїРµСЂРµРїРѕР»РЅРµРЅРёРµ Рё СЃРёРјРІРѕР»
     if (charHandler != 0) charHandler(sym);
     buffer[pos++] = sym;
 }

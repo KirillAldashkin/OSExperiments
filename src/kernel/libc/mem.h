@@ -2,6 +2,6 @@
 
 #include "stdlib.h"
 
-// Копирует данные из одного участка памяти в другой
+// РљРѕРїРёСЂСѓРµС‚ РґР°РЅРЅС‹Рµ РёР· РѕРґРЅРѕРіРѕ СѓС‡Р°СЃС‚РєР° РїР°РјСЏС‚Рё РІ РґСЂСѓРіРѕР№
 void memcpy(void* to, void* from, size_t length);
 void* memset(void* to, int value, size_t length);
