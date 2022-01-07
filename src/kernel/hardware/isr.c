@@ -73,6 +73,8 @@ void SetupInterrupts()
 	SetHandler(IRQ(13), (uint32_t)Irq13);
 	SetHandler(IRQ(14), (uint32_t)Irq14);
 	SetHandler(IRQ(15), (uint32_t)Irq15);
+	// Системный вызов
+	SetHandler(0xF0, (uint32_t)SysCall);
 
 	SetInterruptsTable();
 }

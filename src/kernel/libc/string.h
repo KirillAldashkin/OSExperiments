@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdlib.h"
+#include <stddef.h>
 
 // Возвращает длину строки
 size_t strlen(char* str);

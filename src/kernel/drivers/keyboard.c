@@ -17,7 +17,7 @@ bool caps = 0, shift = 0;
 static void KeyboardCallback(Registers* registers);
 void InitKeyboard() { 
     SetInterruptHandler(IRQ(1), KeyboardCallback); 
-    buffer[256] = '\0';
+    buffer[255] = '\0';
 }
 void SetCharHandler(CharHandlerCallback handler) { charHandler = handler; }
 void SetStringHandler(StringHandlerCallback handler) { stringHandler = handler; }
@@ -59,7 +59,7 @@ void KeyboardCallback(Registers* registers)
     } else {
         sym = ToCapital(sym);
     }
-    if (pos == 255 || IsSpecial(sym)) return; // проверка на переполнение и символ
+    if (pos == 256 || IsSpecial(sym)) return; // проверка на переполнение и символ
     if (charHandler != 0) charHandler(sym);
     buffer[pos++] = sym;
 }

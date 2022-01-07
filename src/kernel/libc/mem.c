@@ -12,4 +12,5 @@ void* memset(void* to, int value, size_t length)
 {
 	char* so = (char*)to;
 	while (length-- > 0) *(so++) = value;
+	return to;
 }

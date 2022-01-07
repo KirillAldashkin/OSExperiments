@@ -52,6 +52,8 @@ extern void Irq12();
 extern void Irq13();
 extern void Irq14();
 extern void Irq15();
+// Системный вызов
+extern void SysCall();
 
 #define IRQ(n) (n+32)
 

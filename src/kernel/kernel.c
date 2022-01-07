@@ -5,6 +5,7 @@
 #include "libc/string.h"
 #include "libc/stdlib.h"
 #include "libc/mem.h"
+#include "syscall.h"
 #include "char.h"
 
 void Command(string cmd);
@@ -41,8 +42,6 @@ void Command(string cmd) {
         WriteLine(helpstr);
     } else if (strcmp("clear", cmd) == 0) {
         ClearScreen();
-    } else if (strcmp("hello", cmd) == 0) {
-        WriteLine("Hi! ^-^");
     } else if (strcmp("ticks", cmd) == 0) {
         string res = "            ";
         memset(res, ' ', 12);
@@ -51,9 +50,18 @@ void Command(string cmd) {
     } else if (strcmp("crash", cmd) == 0) {
         volatile int a = 0;
         volatile int b = 0;
-        volatile int c = a / b;
-    }
-    else {
+        b = a / b;
+    } else if (strcmp("hello", cmd) == 0) {
+        WriteLine("Hi! ^-^");
+    } else if (strcmp("syscall", cmd) == 0) {
+        EchoCall call;
+        call.MustBeZero = 0;
+        call.From = 0xABCDEF;
+        SysCall(call);
+        string s = "      ";
+        itoa(call.To, s, 16);
+        WriteLine(s);
+    } else {
         Write("Unknown command: \"");
         Write(cmd);
         WriteLine("\"");

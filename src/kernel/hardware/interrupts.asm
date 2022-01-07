@@ -2,6 +2,7 @@
 
 [extern ISRHandler]     ; Вызываемые функции
 [extern IRQHandler]
+[extern SystemCall]
 
 CommonISRHandler:
 	pusha               ; Пушим edi, esi, ebp, esp, ebx, edx, ecx, eax
@@ -13,6 +14,7 @@ CommonISRHandler:
 	mov fs, ax
 	mov gs, ax
     push esp
+    cld
 	call ISRHandler     ; Вызываем обработчик
     pop eax
     pop eax             ; Возвращаем всё, как было
@@ -35,7 +37,33 @@ CommonIRQHandler:
 	mov fs, ax
 	mov gs, ax
     push esp
-	call IRQHandler
+	cld
+    call IRQHandler
+    pop ebx
+    pop ebx
+	mov ds, bx
+	mov es, bx
+	mov fs, bx
+	mov gs, bx
+	popa
+	add esp, 8
+	iretd
+
+; Обработка системного вызова
+global SysCall
+SysCall:
+	push byte 0
+	push byte 240
+    pusha
+	mov ax, ds
+	push eax
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+    push esp
+    call SystemCall
     pop ebx
     pop ebx
 	mov ds, bx
