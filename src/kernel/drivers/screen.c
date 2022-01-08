@@ -48,10 +48,10 @@ void Write(string message) {
 			++message;
 		} else {
 			videoMem[pos++].text = *(message++);
-			if (pos >= MaxCols * MaxRows) {
-				pos -= MaxCols;
-				scroll();
-			}
+		}
+		if (pos >= MaxCols * MaxRows) {
+			pos -= MaxCols;
+			scroll();
 		}
 	}
 	setCursorOffset(pos);
@@ -69,10 +69,11 @@ void WriteLine(string message) {
 void NewLine()
 {
 	Position pos = GetCursor();
-	SetCursor(0, pos.y + 1);
-	if (pos.y >= MaxRows) {
+	if (pos.y >= MaxRows - 1) {
 		scroll();
 		SetCursor(0, MaxRows - 1);
+	} else {
+		SetCursor(0, pos.y + 1);
 	}
 }
 void Back()

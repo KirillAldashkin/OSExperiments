@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include "../libc/types.h"
 
 typedef void(*StringHandlerCallback)(string);
 typedef void(*CharHandlerCallback)(char);

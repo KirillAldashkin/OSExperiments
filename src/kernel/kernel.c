@@ -4,14 +4,16 @@
 #include "drivers/keyboard.h"
 #include "libc/string.h"
 #include "libc/stdlib.h"
+#include "libc/char.h"
 #include "libc/mem.h"
 #include "syscall.h"
-#include "char.h"
+#include "memory.h"
 
 void Command(string cmd);
 void Char(char c);
 
 void KernelEntry() {
+    InitMemory();
     ClearScreen();
     SetupInterrupts();
     SetupIRQ();
@@ -19,6 +21,7 @@ void KernelEntry() {
     SetStringHandler(Command);
     WriteLine("Welcome to... need to come up with a name...");
     WriteLine("Write 'help' to get more info.");
+    while(true) asm volatile("hlt");
 }
 
 void Char(char c) {
@@ -53,14 +56,6 @@ void Command(string cmd) {
         b = a / b;
     } else if (strcmp("hello", cmd) == 0) {
         WriteLine("Hi! ^-^");
-    } else if (strcmp("syscall", cmd) == 0) {
-        EchoCall call;
-        call.MustBeZero = 0;
-        call.From = 0xABCDEF;
-        SysCall(call);
-        string s = "      ";
-        itoa(call.To, s, 16);
-        WriteLine(s);
     } else {
         Write("Unknown command: \"");
         Write(cmd);

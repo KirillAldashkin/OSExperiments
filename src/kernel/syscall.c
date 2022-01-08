@@ -1,8 +1,8 @@
 #include "syscall.h"
 #include "drivers/screen.h"
 #include "libc/stdlib.h"
+#include "libc/types.h"
 #include "libc/mem.h"
-#include "types.h"
 #include <stdint.h>
 
 void SystemCall(Registers* regs)

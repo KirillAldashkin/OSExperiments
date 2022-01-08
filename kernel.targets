@@ -30,7 +30,7 @@
 	</Target>
 	<Target Name="CompileKernelC" Inputs="@(KernelC)" Outputs="@(KernelCObj)">
 		<PropertyGroup>
-			<DArg>$(CFlags)</DArg>
+			<DArg>$(CFlags) -Os</DArg>
 		</PropertyGroup>
 		<PropertyGroup Condition="$(Debug)=='true'">
 			<DArg>$(CFlags) -g</DArg>

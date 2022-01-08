@@ -2,7 +2,7 @@
 #include "../drivers/screen.h"
 #include "../drivers/ports.h"
 #include "../libc/stdlib.h"
-#include "../types.h"
+#include "../libc/types.h"
 #include "timer.h"
 #include "idt.h"
 #include "isr.h"
@@ -81,7 +81,7 @@ void SetupInterrupts()
 
 void SetupIRQ() {
 	asm volatile("sti");
-	InitTimer(50);
+	InitTimer(1000);
 	InitKeyboard();
 }
 
@@ -110,25 +110,25 @@ void ISRHandler(Registers* registers)
 |EFlags     0x00000000|\n\
 |UserEsp    0x00000000|\n\
 |EIP        0x00000000|\n";
-	itoa(registers->InterruptNumber, ErrOffset(0),  10);
-	itoa(registers->ErrorCode,       ErrOffset(1),  10);
-	itoa(registers->Eax,             ErrOffset(2),  10);
-	itoa(registers->Ebx,             ErrOffset(3),  10);
-	itoa(registers->Ecx,             ErrOffset(4),  10);
-	itoa(registers->Edx,             ErrOffset(5),  10);
-	itoa(registers->Esp,             ErrOffset(6),  10);
-	itoa(registers->Ebp,             ErrOffset(7),  10);
-	itoa(registers->Esi,             ErrOffset(8),  10);
-	itoa(registers->Edi,             ErrOffset(9),  10);
-	itoa(registers->Ds,              ErrOffset(10), 10);
-	itoa(registers->Cs,              ErrOffset(11), 10);
-	itoa(registers->Ss,              ErrOffset(12), 10);
-	itoa(registers->EFlags,          ErrOffset(13), 10);
-	itoa(registers->UserEsp,         ErrOffset(14), 10);
-	itoa(registers->Eip,             ErrOffset(15), 10);
+	itoa(registers->InterruptNumber, ErrOffset(0),  16);
+	itoa(registers->ErrorCode,       ErrOffset(1),  16);
+	itoa(registers->Eax,             ErrOffset(2),  16);
+	itoa(registers->Ebx,             ErrOffset(3),  16);
+	itoa(registers->Ecx,             ErrOffset(4),  16);
+	itoa(registers->Edx,             ErrOffset(5),  16);
+	itoa(registers->Esp,             ErrOffset(6),  16);
+	itoa(registers->Ebp,             ErrOffset(7),  16);
+	itoa(registers->Esi,             ErrOffset(8),  16);
+	itoa(registers->Edi,             ErrOffset(9),  16);
+	itoa(registers->Ds,              ErrOffset(10), 16);
+	itoa(registers->Cs,              ErrOffset(11), 16);
+	itoa(registers->Ss,              ErrOffset(12), 16);
+	itoa(registers->EFlags,          ErrOffset(13), 16);
+	itoa(registers->UserEsp,         ErrOffset(14), 16);
+	itoa(registers->Eip,             ErrOffset(15), 16);
 	Write(err);
-	asm("cli");
-	asm("hlt");
+	asm volatile("cli");
+	asm volatile("hlt");
 }
 
 void IRQHandler(Registers* registers)

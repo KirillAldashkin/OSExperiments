@@ -4,7 +4,7 @@
 #include "../libc/stdlib.h"
 #include "../libc/string.h"
 #include "../libc/mem.h"
-#include "../char.h"
+#include "../libc/char.h"
 #include <stdint.h>
 
 StringHandlerCallback stringHandler = 0;

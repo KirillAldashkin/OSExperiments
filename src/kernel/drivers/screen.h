@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include "../libc/types.h"
 #include <stdint.h>
 
 // Аттрибуты
