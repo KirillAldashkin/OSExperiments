@@ -5,41 +5,57 @@
 		<KernelObj Include="@(KernelCObj);@(KernelAsmObj)"/>
 		<OutputBin Include="build/bin/*.bin"/>
 	</ItemGroup>
+	
 	<Target Name="Run" DependsOnTargets="Build">
+		<Message Text="Starting QEMU..." Importance="high"/>
 		<PropertyGroup Condition="$(Debug)=='true'">
-			<DArgs> -s -S</DArgs>
+			<DebugArgs>-s -S</DebugArgs>
 		</PropertyGroup>
-		<Exec Command="&quot;$(QemuPath)qemu-system-i386&quot; -fda &quot;build/image.bin&quot;$(DArgs) -L &quot;$(QemuPath)&quot;"/>
+		<Exec Command="qemu-system-i386 -hda &quot;build/image.bin&quot; $(DebugArgs)"/>
 	</Target>
-	<Target Name="Build" DependsOnTargets="CompileBoot;LinkKernel" Outputs="build/image.bin">
-		<Exec Command="cmd /C &quot;copy /B build\bin\boot.bin+build\bin\kernel.bin build\image.bin&quot;"/>
+	
+	<Target Name="Build" DependsOnTargets="CompileMBR;CompileVBR;LinkKernel" Outputs="build/image.bin">
+		<Message Text="Writing image..." Importance="high"/>
+		<Copy SourceFiles="image.bin" DestinationFolder="build"/>
+		<Exec Command="dotnet run --project ImageBurner/ImageBurner.csproj build/image.bin build/bin/mbr.bin build/bin/vbr.bin 10000 build/bin/kernel.bin"/>
 	</Target>
-	<Target Name="CompileBoot" Inputs="@(BootAsm)" Outputs="build/bin/boot.bin">
-		<Exec Command="&quot;$(NasmPath)nasm&quot; -f bin src/boot/boot.asm -Isrc/boot/ -o build/bin/boot.bin"/>
+	
+	<Target Name="CompileMBR" Inputs="@(MBRSrc)" Outputs="build/bin/mbr.bin">
+		<Message Text="Compiling MBR..." Importance="high"/>
+		<Exec Command="nasm -f bin src/mbr.asm -Isrc/ -o build/bin/mbr.bin"/>
 	</Target>
+
+	<Target Name="CompileVBR" Inputs="@(VBRSrc)" Outputs="build/bin/vbr.bin">
+		<Message Text="Compiling VBR..." Importance="high"/>
+		<Exec Command="nasm -f bin src/loader/fat32header.asm -Isrc/ -o build/bin/vbr.bin"/>
+	</Target>
+	
 	<Target Name="LinkKernel" DependsOnTargets="CompileKernelC;CompileKernelAsm" Inputs="@(KernelObj)" Outputs="build/bin/kernel.bin">
-		<!-- "entry.elf" должен быть первым в списке, поэтому добавляем его в начало, а потом удаляем повторы -->
-		<RemoveDuplicates Inputs="build/obj/entry.elf;@(KernelObj)">
+		<Message Text="Linking kernel..." Importance="high"/>
+		<!-- "init.elf" должен быть первым в списке, поэтому добавляем его в начало, а потом удаляем повторы -->
+		<RemoveDuplicates Inputs="build/obj/init.elf;@(KernelObj)">
 			<Output TaskParameter="Filtered" ItemName="FilteredObj"/>
 		</RemoveDuplicates>
 		<PropertyGroup>
-			<LDCmd>&quot;$(GNUPrefix)ld&quot; @(FilteredObj->'%(Fullpath)', ' ') $(LinkFlags) -o build/</LDCmd>
+			<LinkCmd>i686-elf-ld @(FilteredObj->'%(Fullpath)', ' ') $(LinkFlags)</LinkCmd>
 		</PropertyGroup>
-		<Exec Command="$(LDCmd)bin/kernel.bin --oformat binary"/>
-		<Exec Command="$(LDCmd)symbols.elf" Condition="$(Debug)=='true'"/>
+		<Exec Command="$(LinkCmd) -o build/bin/kernel.bin --oformat binary"/>
+		<Exec Command="$(LinkCmd) -o build/symbols.elf" Condition="$(Debug)=='true'"/>
 	</Target>
+	
 	<Target Name="CompileKernelC" Inputs="@(KernelC)" Outputs="@(KernelCObj)">
-		<PropertyGroup>
-			<DArg>$(CFlags) -Os</DArg>
-		</PropertyGroup>
+		<Message Text="Compiling C kenrel files..." Importance="high"/>
 		<PropertyGroup Condition="$(Debug)=='true'">
-			<DArg>$(CFlags) -g</DArg>
+			<DebugArgs>-g</DebugArgs>
 		</PropertyGroup>
-		<Exec Command="&quot;$(GNUPrefix)gcc&quot; $(DArg) -c %(KernelC.Identity) -o @(KernelC->'build/obj/%(Filename).elf'->'%(Identity)')"/>
+		<Exec Command="i686-elf-gcc $(CFlags) $(DebugArgs) -c %(KernelC.Identity) -o @(KernelC->'build/obj/%(Filename).elf'->'%(Identity)')"/>
 	</Target>
+	
 	<Target Name="CompileKernelAsm" Inputs="@(KernelAsm)" Outputs="@(KernelAsmObj)">
-		<Exec Command="&quot;$(NasmPath)nasm&quot; %(KernelAsm.Identity) -g -f elf32 -o @(KernelAsm->'build/obj/%(Filename).elf'->'%(Identity)')"/>
+		<Message Text="Compiling ASM kernel files..." Importance="high"/>
+		<Exec Command="nasm %(KernelAsm.Identity) -g -f elf32 -Isrc/ -o @(KernelAsm->'build/obj/%(Filename).elf'->'%(Identity)')"/>
 	</Target>
+	
 	<Target Name="Clean">
 		<Delete Files="@(KernelObj);@(OutputBin);build/symbols.elf;build/image.bin"/>
 	</Target>

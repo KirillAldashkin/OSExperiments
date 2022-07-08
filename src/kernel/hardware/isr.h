@@ -1,6 +1,8 @@
-#pragma once
+// Определяет обработчики прерываний и позволяет задать свои.
+#ifndef HARDWARE_ISR_H
+#define HARDWARE_ISR_H
 
-#include <stdint.h>
+#include "../utils/types.h"
 
 // Обработчики ошибок процессора
 extern void Isr0();
@@ -35,6 +37,7 @@ extern void Isr28();
 extern void Isr29();
 extern void Isr30();
 extern void Isr31();
+
 // IRQ прерывания
 extern void Irq0();
 extern void Irq1();
@@ -52,20 +55,26 @@ extern void Irq12();
 extern void Irq13();
 extern void Irq14();
 extern void Irq15();
+
 // Системный вызов
 extern void SysCall();
 
 #define IRQ(n) (n+32)
 
-// Структура со всякими регистрами (и кодами ошибки)
+// Структура со всякими регистрами (и кодом ошибки)
 typedef struct {
-	uint32_t Ds;
-	uint32_t Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
-	uint32_t InterruptNumber, ErrorCode;
-	uint32_t Eip, Cs, EFlags, UserEsp, Ss;
+	uint32 Ds;
+	uint32 Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
+	uint32 InterruptNumber, ErrorCode;
+	uint32 Eip, Cs, EFlags, UserEsp, Ss;
 } Registers;
 typedef void(*InterruptHandler)(Registers*);
 
+// Настраивает прерывания.
 void SetupInterrupts();
+// Инициализирует IRQ.
 void SetupIRQ();
-void SetInterruptHandler(uint8_t index, InterruptHandler handler);
+// Задаёт обработчик прерываний.
+void SetInterruptHandler(uint8 index, InterruptHandler handler);
+
+#endif

@@ -1,6 +1,6 @@
-# Visual Studio files
+# Файлы Visual Studio
 .vs
-# Build files
+# Файлы сборки
 build
-# Environment-specific settings
-kernel.proj.user
+# Локальные фалйы можно задать префиксом "__"
+**__*

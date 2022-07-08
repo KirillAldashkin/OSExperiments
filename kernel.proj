@@ -1,14 +1,14 @@
 <Project DefaultTargets="Build">
 	<PropertyGroup>
-		<Debug>true</Debug>
-		<CFlags>-m32 -ffreestanding -Wall -Wextra -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs</CFlags>
-		<LinkFlags>-melf_i386 -Ttext 0x7e00</LinkFlags>
+		<Debug>false</Debug>
+		<CFlags>-Os -s -m32 -ffreestanding -Wall -Wextra -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -ffunction-sections -fdata-sections</CFlags>
+		<LinkFlags>-melf_i386 --strip-all --gc-sections --print-gc-sections -Ttext 0x8200</LinkFlags>
 	</PropertyGroup>
 	<ItemGroup>
-		<BootAsm Include="src/boot/**/*.asm"/>
+		<MBRSrc Include="src/mbr.asm"/>
+		<VBRSrc Include="src/loader/**"/>
 		<KernelC Include="src/kernel/**/*.c"/>
 		<KernelAsm Include="src/kernel/**/*.asm"/>
 	</ItemGroup>
 	<Import Project="kernel.targets"/>
-	<Import Project="kernel.proj.user"/>
 </Project>

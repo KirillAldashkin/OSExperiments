@@ -1,21 +1,22 @@
-#pragma once
+// Реализация системных вызовов (на будущее). Протокол:
+// 1) Поместить в регистр EBX указатель на структуру, описывающую сам запрос
+// 2) Вызвать прерывание 0x80
+// 3) Ядро обработает указанную структуру, согласно переданному запросу
 
-#include "hardware/idt.h"
+#ifndef SYSCALL_H
+#define SYSCALL_H
+
 #include "hardware/isr.h"
-#include <stdint.h>
+#include "utils/types.h"
 
-#define SysCall(p) asm volatile("int $0xF0" :: "b"(&p));
+#define SysCall(p) asm volatile("int $0x80" :: "b"(&p));
 
-// Зарезервируем себе одно прерывание (на будущее) 
-// для системных вызовов. Протокол:
-// 1) Поместить в регистр EBX указатель на структуру, 
-//    описывающую сам запрос
-// 2) Вызвать прерывание 0xFF
-// 3) Ядро запишет результат в указанную структуру,
-//    согласно переданному запросу
+// Обрабатывает системный вызов.
 void SystemCall(Registers* registers);
 
 typedef struct {
-	uint16_t MustBeZero;
-	uint32_t From, To;
+	uint16 MustBe0;
+	uint32 From, To;
 } __attribute__((packed)) EchoCall;
+
+#endif

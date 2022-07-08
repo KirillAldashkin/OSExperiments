@@ -1,7 +1,8 @@
-#pragma once
+#ifndef DRIVERS_SCREEN_H
+#define DRIVERS_SCREEN_H
 
-#include "../libc/types.h"
-#include <stdint.h>
+#include "../utils/types.h"
+#include "../utils/memory.h"
 
 // Аттрибуты
 #define AttrBlink          0b10000000
@@ -35,12 +36,15 @@
 #define MaxCols 80
 #define Screen (*(ConsoleChar(*)[MaxRows][MaxCols])0xb8000)
 
+#pragma pack (push, 1)
 typedef struct {
     char text;
-    uint8_t attr;
+    uint8 attr;
 } ConsoleChar;
+#pragma pack (pop)
+
 typedef struct {
-    uint8_t x, y;
+    uint8 x, y;
 } Position;
 
 // Публичное API
@@ -50,7 +54,7 @@ void ClearScreen();
 // Возвращает позицию курсора.
 Position GetCursor();
 // Перемещает курсор в заданное положение.
-void SetCursor(uint8_t x, uint8_t y);
+void SetCursor(uint8 x, uint8 y);
 // Очищает текущий символ и переходит к предыдущему.
 void Back();
 // Выводит текст на экран.
@@ -61,3 +65,11 @@ void WriteChar(char c);
 void WriteLine(string message);
 // Переводит строку
 void NewLine();
+// Выводит беззнаковое число на экран.
+void WriteU8(uint8 val);
+// Выводит беззнаковое число на экран.
+void WriteU16(uint16 val);
+// Выводит беззнаковое число на экран.
+void WriteU32(uint32 val);
+
+#endif

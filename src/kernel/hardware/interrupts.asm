@@ -1,37 +1,39 @@
+; Код для обработки прерываний
 [bits 32]
 
-[extern ISRHandler]     ; Вызываемые функции
+; Вызываемые функции C
+[extern ISRHandler]
 [extern IRQHandler]
 [extern SystemCall]
 
 CommonISRHandler:
-	pusha               ; Пушим edi, esi, ebp, esp, ebx, edx, ecx, eax
-	mov ax, ds          ; Пушим ds
+	pusha           ; Пушим edi, esi, ebp, esp, ebx, edx, ecx, eax
+	mov ax, ds      ; Пушим ds
 	push eax
-	mov ax, 0x10        ; 0x10 - CodeSegment в нашем GDT, устанавливаем его
+	mov ax, 0x08    ; 0x08 - KernelCodeSegment в нашем GDT, устанавливаем его
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
     push esp
     cld
-	call ISRHandler     ; Вызываем обработчик
+	call ISRHandler ; Вызываем обработчик
     pop eax
-    pop eax             ; Возвращаем всё, как было
+    pop eax         ; Возвращаем всё, как было
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
 	popa
-	add esp, 8          ; Убираем из стэка код прерывания и номер ошибки (4+4=8 байт)
-	iretd               ; Убираем из стэка cs, eip, eflags, ss, esp (процессор запушил их автоматически)
+	add esp, 8      ; Убираем из стэка код прерывания и номер ошибки (4+4=8 байт)
+	iretd           ; Убираем из стэка cs, eip, eflags, ss, esp (процессор запушил их автоматически)
 
-; Почти тоже самое, что и CommonISRHandler, чутка отличается
+; Почти тоже самое, что и CommonISRHandler, но чутка отличается
 CommonIRQHandler:
 	pusha
 	mov ax, ds
 	push eax
-	mov ax, 0x10
+	mov ax, 0x08
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
@@ -53,7 +55,7 @@ CommonIRQHandler:
 global SysCall
 SysCall:
 	push byte 0
-	push byte 240
+	push byte 0x80
     pusha
 	mov ax, ds
 	push eax

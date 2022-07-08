@@ -1,28 +1,37 @@
-#pragma once
+// Позволяет настроить таблицу прерываний.
+#ifndef HARDWARE_IDT_H
+#define HARDWARE_IDT_H
 
-#include <stdint.h>
+#include "../utils/types.h"
 
-#define CodeSegment 0x08;
-
+#define CodeSegment 0x08
 
 // Описание прерывания
+#pragma pack (push, 1)
 typedef struct {
-	uint16_t LowOffset;  // Часть адреса функции
-	uint16_t Segment;    // Сегмент 
-	uint8_t Reserved;
-	uint8_t Flags;       // Всякие флаги
-	uint16_t HighOffset; // Часть адреса функции
-} __attribute__((packed)) InterruptDescriptor;
+	uint16 LowOffset;  // Часть адреса функции
+	uint16 Segment;    // Сегмент 
+	uint8 Reserved;
+	uint8 Flags;       // Всякие флаги
+	uint16 HighOffset; // Часть адреса функции
+} InterruptDescriptor;
+#pragma pack (pop)
 
 // Описание таблицы прерываний
+#pragma pack (push, 1)
 typedef struct {
-	uint16_t Size;
-	uint32_t Address;
-} __attribute__((packed)) InterruptsTable;
+	uint16 Size;
+	uint32 Address;
+} InterruptsTable;
+#pragma pack (pop)
 
 #define InterruptCount 256
 InterruptDescriptor Interrupts[InterruptCount];
 InterruptsTable IntTable;
 
-void SetHandler(uint16_t index, uint32_t address);
+// Устанавливает обработчик в таблице прерываний.
+void SetHandler(uint16 index, uint32 address);
+// Загружает таблицу прерываний.
 void SetInterruptsTable();
+
+#endif
