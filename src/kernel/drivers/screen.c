@@ -93,19 +93,19 @@ void ClearScreen() {
 }
 void WriteU8(uint8 val) {
 	string s = "  ";
-	MemorySet(s, ' ', 2);
+	MemorySet(s, '0', 2);
 	UIntToString(val, s, 16);
 	Write(s);
 }
 void WriteU16(uint16 val) {
 	string s = "    ";
-	MemorySet(s, ' ', 4);
+	MemorySet(s, '0', 4);
 	UIntToString(val, s, 16);
 	Write(s);
 }
 void WriteU32(uint32 val) {
 	string s = "        ";
-	MemorySet(s, ' ', 8);
+	MemorySet(s, '0', 8);
 	UIntToString(val, s, 16);
 	Write(s);
 }

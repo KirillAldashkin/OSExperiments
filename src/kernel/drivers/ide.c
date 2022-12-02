@@ -4,7 +4,7 @@
 #include "timer.h"
 
 IDEChannelRegisters Channels[2];
-uint8 IDEBuffer[2048] = { 0 };
+uint8 IDEBuffer[512] = { 0 };
 
 static volatile bool IDE_Irq = 0;
 
@@ -141,4 +141,65 @@ uint8 IDEWait(uint8 channel, bool getStatus) {
 
     if (!getStatus) return 0;
     return IDERead(channel, ATA_RegStatus);
+}
+
+uint8 ParseIDEError(uint8 status) {
+    if (status & ATA_Error) return ATA_Error;
+    if (status & ATA_DriveWriteFault) return ATA_DriveWriteFault;
+    if (!(status & ATA_DataRequestReady)) return ATA_DataRequestReady;
+    return 0;
+}
+
+uint8 AccessIDEDrive(uint8 action, uint8 drive, uint32 lba, uint8 sectors, void* data) {
+    // Проверки
+    if (action != ATA_Read && action != ATA_Write) return ATA_WrongAction; // Неверное действие (нужно ATA_Read или ATA_Write)
+    if (drive > 3) return ATA_WrongDrive;                                  // Неверный номер диска
+    if (!(IDEDevices[drive].Capabilities & 0x200)) return ATA_NonLBADrive; // Пока поддерживается только диски с LBA адресацией
+    if (lba > 0xFFFFFFF) return ATA_DiskAddressOutOfBounds;                // Слишком большой адрес для LBA28
+
+    uint8 channel = IDEDevices[drive].Channel;
+
+    // Отрубаем прерывания
+    IDEWrite(channel, ATA_RegControl, Channels[channel].NoInt = (IDE_Irq = 0x0) + 0x02);
+
+    // Готовим данные
+    uint8 lbaBuffer[3];
+    lbaBuffer[0] =  lba & 0x00000FF;
+    lbaBuffer[1] = (lba & 0x000FF00) >> 8;
+    lbaBuffer[2] = (lba & 0x0FF0000) >> 16;
+    uint8 head = (lba & 0xF000000) >> 24;
+    uint16 bus = Channels[channel].Base;
+    uint8 cmd;
+    if (action == ATA_Read) cmd = ATA_CommandReadPIO;
+    if (action == ATA_Write) cmd = ATA_CommandWritePIO;
+
+    // Ждём диск и пишем
+    while (IDERead(channel, ATA_RegStatus) & ATA_Busy);
+
+    IDEWrite(channel, ATA_RegHDDEVSelect, 0xE0 | (IDEDevices[drive].Drive << 4) | head);
+
+    IDEWrite(channel, ATA_RegSecCount0, sectors);
+    IDEWrite(channel, ATA_RegLBA0, lbaBuffer[0]);
+    IDEWrite(channel, ATA_RegLBA1, lbaBuffer[1]);
+    IDEWrite(channel, ATA_RegLBA2, lbaBuffer[2]);
+    IDEWrite(channel, ATA_RegCommand, cmd);
+
+    uint32* buff = (uint32*)data;
+    uint8 error;
+    if(action == ATA_Read)
+        for (uint8 i = 0; i < sectors; i++) {
+            error = ParseIDEError(IDEWait(channel, true));
+            if (error) return error;
+
+            PortIn32Buffer(bus, buff, SectorBytes / 4);
+            buff += SectorBytes / 4;
+        }
+    else if(action == ATA_Write)
+        for (uint8 i = 0; i < sectors; i++) {
+            error = ParseIDEError(IDEWait(channel, true));
+            if (error) return error;
+            // TODO write to IDE drive
+            buff += SectorBytes / 2;
+        }
+    return 0;
 }

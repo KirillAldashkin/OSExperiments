@@ -19,7 +19,7 @@ uint32 PortIn32(uint16 port);
 // Передаёт 4 байта в порт.
 void PortOut32(uint16 port, uint32 val);
 
-// Передаёт данные в порт по 4 байта.
+// Получает данные из порта по 4 байта.
 void PortIn32Buffer(uint16 port, uint32* to, uint32 size);
 
 #endif

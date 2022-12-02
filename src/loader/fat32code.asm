@@ -9,16 +9,11 @@ mov sp, bp
 write LoadingStr
 
 ; Откуда считываем: HiddenSectors - начало раздела
-mov ax, [HiddenSectors]    ; Младшие 2 байта
-mov [DAPReadOffsetLow], ax
-mov ax, [HiddenSectors+2]  ; Старшие 2 байта
-mov [DAPReadOffsetLow+2], ax
+mov eax, [HiddenSectors]
+mov [DAPReadOffsetLow], eax
 ; Добавляем 1 сектор, чтобы пропустить BPB+EBPB
 clc
-inc word [DAPReadOffsetLow] ; Младшие 2 байта
-jnc ResOverflowEnd
-	inc word [DAPReadOffsetLow+2] ; Старшие 2 байта
-ResOverflowEnd:
+inc dword [DAPReadOffsetLow]
 
 ; Сколько считываем: ReservedSectors - все сектора до начала FAT'ов
 mov ax, [ReservedSectors]

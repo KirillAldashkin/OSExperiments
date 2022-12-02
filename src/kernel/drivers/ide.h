@@ -4,6 +4,8 @@
 
 #include "../utils/types.h"
 
+#define SectorBytes 512
+
 #define ATA_Busy              0x80 
 #define ATA_DriveReady        0x40 
 #define ATA_DriveWriteFault   0x20 
@@ -21,6 +23,11 @@
 #define ATA_CommandAborted     0x04
 #define ATA_Track0NotFound     0x02
 #define ATA_NoAddressMark      0x01
+
+#define ATA_WrongAction            0xFF
+#define ATA_WrongDrive             0xFE
+#define ATA_NonLBADrive            0xFD
+#define ATA_DiskAddressOutOfBounds 0xFC
 
 #define ATA_CommandReadPIO        0x20
 #define ATA_CommandReadPIOExt     0x24
@@ -113,5 +120,8 @@ void IDEWrite(uint8 channel, uint8 reg, uint8 data);
 void IDEReadBuffer(uint8 channel, uint8 reg, void* buffer, uint32 size);
 // Ожидает завершение действия в IDE контроллере.
 uint8 IDEWait(uint8 channel, bool getStatus);
-
+// Возвращает только ошибку в переданном статусе.
+uint8 ParseIDEError(uint8 status);
+// Считывает или записывает секторы на диск.
+uint8 AccessIDEDrive(uint8 action, uint8 drive, uint32 lba, uint8 sectors, void* data);
 #endif

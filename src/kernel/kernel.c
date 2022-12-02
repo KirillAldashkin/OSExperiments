@@ -21,14 +21,13 @@ void KernelEntry() {
 	ShellInit(HandleCommand);
 	InitIDE((uint32[5]) { 0x1F0, 0x3F6, 0x170, 0x376, 0x000 });
 
-	for (uint8 i = 0; i < 4; i++) {
-		if (!IDEDevices[i].IsPresent) continue;
-		Write("ATA");
-		if (IDEDevices[i].IsATAPI) Write("PI");
-		Write(" drive 0x");
-		WriteU32(IDEDevices[i].Sectors / 2 / 1024);
-		Write("MB, Model: ");
-		WriteLine(IDEDevices[i].Model);
+	uint8 ideData[512];
+	uint8 code = AccessIDEDrive(ATA_Read, 0, 0, 1, ideData);
+	Write("Reading from IDE drive returned 0x");
+	WriteU8(code);
+	for (uint32 i = 0; i < 512; i++) {
+		if ((i % 32) == 0) WriteLine("");
+		WriteU8(ideData[i]);
 	}
 }
 
