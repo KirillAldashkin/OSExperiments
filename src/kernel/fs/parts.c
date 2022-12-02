@@ -1,6 +1,8 @@
 #include "parts.h"
 #include "drives.h"
 #include "../drivers/screen.h"
+#include "../utils/strings.h"
+#include "../utils/memory.h"
 
 #pragma pack (push, 1)
 typedef struct {
@@ -40,13 +42,33 @@ typedef struct {
 
 static uint16 partsRegistered = 0;
 
+bool rootDirGetName(FSEntry* which, string buff, uint16 buffLen) {
+	if (which->type != PT_EntryDir) return false;
+	if (buffLen < 7) return false;
+	MemoryCopy(buff, "pt_____", 7);
+	UIntToString(which->partition, buff + 2, 10);
+	return true;
+}
+
+FSEntryEnumerator rootDirFAT32getEnumerator(FSEntry* which) {
+	// TODO
+	FSEntryEnumerator ret;
+	return ret;
+}
+
 uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors) {
-	if (partsRegistered == FS_MaxParts) return PT_TooMuchParts;
+	if (partsRegistered == PT_MaxParts) return PT_TooMuchParts;
 	PartitionData data;
 	data.disk = disk;
-	data.fsType = FS_PartitonFAT32;
+	data.fsType = PT_PartitonFAT32;
 	data.start = start;
 	data.sectors = sectors;
+	data.root.type = PT_EntryDir;
+	data.root.partition = partsRegistered;
+	data.root.parent = nullptr;
+	data.root.getName = rootDirGetName;
+	data.root.dir.getEnumerator = rootDirFAT32getEnumerator;
+
 	BPB bpb;
 	Disks[disk].read(Disks[disk].implData, start, 1, &bpb);
 

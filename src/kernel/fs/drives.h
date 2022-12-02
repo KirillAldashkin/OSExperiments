@@ -13,8 +13,6 @@
 #define FS_DeviceError   3
 #define FS_TooMuchDisks  4
 
-#define FS_PartitonFAT32 0xFA32
-
 // Функция считывания данных. Принимает: 
 // 1) указатель на сведения о диске
 // 2) сектор, с которого начать считывание
