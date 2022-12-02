@@ -8,6 +8,35 @@ uint8 IDEBuffer[512] = { 0 };
 
 static volatile bool IDE_Irq = 0;
 
+uint32 implGetSize(IDEDevice* from) {
+    uint8 drive = from - IDEDevices;
+    if (drive >= MaxDrives) return 0;
+    return from->Sectors;
+}
+
+string implGetName(IDEDevice* from) {
+    uint8 drive = from - IDEDevices;
+    if (drive >= MaxDrives) return "<IDE wrong disk pointer>";
+    return from->Model;
+}
+
+uint16 implRead(IDEDevice* from, uint32 offset, uint8 sectors, void* to) {
+    uint8 drive = from - IDEDevices;
+    uint8 code = AccessIDEDrive(ATA_Read, drive, offset, sectors, to);
+    if (code == 0) return FS_Ok;
+    if (code == ATA_WrongDrive) return FS_DriveNotFound;
+    if (code == ATA_DiskAddressOutOfBounds) return FS_WrongAddress;
+    return FS_DeviceError;
+}
+
+uint16 implWrite(IDEDevice* from, uint32 offset, uint8 sectors, void* to) {
+    uint8 drive = from - IDEDevices;
+    uint8 code = AccessIDEDrive(ATA_Write, drive, offset, sectors, to);
+    if (code == 0) return FS_Ok;
+    if (code == ATA_WrongDrive) return FS_DriveNotFound;
+    if (code == ATA_DiskAddressOutOfBounds) return FS_WrongAddress;
+    return FS_DeviceError;
+}
 
 void InitIDE(uint32 bars[5]) {
     Channels[ATA_Primary].Base         = (bars[0] & 0xFFFFFFFC) + 0x1F0 * (!bars[0]);
@@ -23,7 +52,7 @@ void InitIDE(uint32 bars[5]) {
 
     uint8 found = 0;
     for (uint8 channel = 0; channel < 2; channel++) {
-        for (uint8 drive = 0; drive < 4; drive++) {
+        for (uint8 drive = 0; drive < 2; drive++) {
             IDEDevices[found].IsPresent = false;
             uint8 error = 0, isATAPI = false, status;
             
@@ -74,6 +103,14 @@ void InitIDE(uint32 bars[5]) {
                 IDEDevices[found].Model[i + 1] = (char)IDEBuffer[ATA_IdentModel + i];
             }
             IDEDevices[found].Model[40] = '\0';
+
+            DiskData data;
+            data.implData = IDEDevices + found;
+            data.getName = (NameGetter)implGetName;
+            data.getSize = (SizeGetter)implGetSize;
+            data.read = (DataReader)implRead;
+            data.write = (DataWriter)implWrite;
+            AddDisk(data);
 
             found++;
         }
@@ -153,7 +190,8 @@ uint8 ParseIDEError(uint8 status) {
 uint8 AccessIDEDrive(uint8 action, uint8 drive, uint32 lba, uint8 sectors, void* data) {
     // Проверки
     if (action != ATA_Read && action != ATA_Write) return ATA_WrongAction; // Неверное действие (нужно ATA_Read или ATA_Write)
-    if (drive > 3) return ATA_WrongDrive;                                  // Неверный номер диска
+    if (drive >= MaxDrives) return ATA_WrongDrive;                         // Неверный номер диска
+    if (!IDEDevices[drive].IsPresent) return ATA_WrongDrive;               // Нет такого диска
     if (!(IDEDevices[drive].Capabilities & 0x200)) return ATA_NonLBADrive; // Пока поддерживается только диски с LBA адресацией
     if (lba > 0xFFFFFFF) return ATA_DiskAddressOutOfBounds;                // Слишком большой адрес для LBA28
 

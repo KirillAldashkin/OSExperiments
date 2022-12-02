@@ -3,8 +3,7 @@
 #define DRIVERS_IDE_H
 
 #include "../utils/types.h"
-
-#define SectorBytes 512
+#include "../fs/drives.h"
 
 #define ATA_Busy              0x80 
 #define ATA_DriveReady        0x40 
@@ -88,6 +87,8 @@
 #define ATA_Read  0x00
 #define ATA_Write 0x01
 
+#define MaxDrives 4
+
 typedef struct {
 	uint16 Base;
 	uint16 Control;
@@ -108,7 +109,7 @@ typedef struct {
 	char   Model[41];
 } IDEDevice;
 
-IDEDevice IDEDevices[4];
+IDEDevice IDEDevices[MaxDrives];
 
 // Инициализирует драйвер IDE.
 void InitIDE(uint32 bars[5]);
