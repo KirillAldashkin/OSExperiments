@@ -10,6 +10,7 @@
 #include "memorymap.h"
 #include "shell.h"
 #include "fs/drives.h"
+#include "fs/parts.h"
 
 void HandleCommand(string cmd);
 
@@ -22,6 +23,9 @@ void KernelEntry() {
 	ShellInit(HandleCommand);
 	InitSectorsCache();
 	InitIDE((uint32[5]) { 0x1F0, 0x3F6, 0x170, 0x376, 0x000 });
+
+	FSEntryEnumerator enumr = Parts[0].root.dir.getEnumerator(&Parts[0].root);
+	while (enumr.moveNext(&enumr));
 }
 
 void PrintMemMap();

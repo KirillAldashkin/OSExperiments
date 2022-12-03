@@ -8,19 +8,22 @@ uint8 IDEBuffer[512] = { 0 };
 
 static volatile bool IDE_Irq = 0;
 
-uint32 implGetSize(IDEDevice* from) {
+uint32 implGetSize(uint32* data) {
+    IDEDevice* from = (IDEDevice*)data[0];
     uint8 drive = from - IDEDevices;
     if (drive >= MaxDrives) return 0;
     return from->Sectors;
 }
 
-string implGetName(IDEDevice* from) {
+string implGetName(uint32* data) {
+    IDEDevice* from = (IDEDevice*)data[0];
     uint8 drive = from - IDEDevices;
     if (drive >= MaxDrives) return "<IDE wrong disk pointer>";
     return from->Model;
 }
 
-uint16 implRead(IDEDevice* from, uint32 offset, uint8 sectors, void* to) {
+uint16 implRead(uint32* data, uint32 offset, uint8 sectors, void* to) {
+    IDEDevice* from = (IDEDevice*)data[0];
     uint8 drive = from - IDEDevices;
     uint8 code = AccessIDEDrive(ATA_Read, drive, offset, sectors, to);
     if (code == 0) return FS_Ok;
@@ -29,7 +32,8 @@ uint16 implRead(IDEDevice* from, uint32 offset, uint8 sectors, void* to) {
     return FS_DeviceError;
 }
 
-uint16 implWrite(IDEDevice* from, uint32 offset, uint8 sectors, void* to) {
+uint16 implWrite(uint32* data, uint32 offset, uint8 sectors, void* to) {
+    IDEDevice* from = (IDEDevice*)data[0];
     uint8 drive = from - IDEDevices;
     uint8 code = AccessIDEDrive(ATA_Write, drive, offset, sectors, to);
     if (code == 0) return FS_Ok;
@@ -105,7 +109,7 @@ void InitIDE(uint32 bars[5]) {
             IDEDevices[found].Model[40] = '\0';
 
             DiskData data;
-            data.implData = IDEDevices + found;
+            data.reserved[0] = IDEDevices + found;
             data.getName = (NameGetter)implGetName;
             data.getSize = (SizeGetter)implGetSize;
             data.read = (DataReader)implRead;

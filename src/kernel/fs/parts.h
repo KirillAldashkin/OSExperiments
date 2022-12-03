@@ -41,7 +41,7 @@ struct t_FSEntry {
     uint16 partition;
     FSDirectory* parent;
     FSNameGetter getName;
-    void* data;
+    uint32 reserved[4];
     union
     {
         FSDirectory dir;
@@ -50,23 +50,27 @@ struct t_FSEntry {
 };
 
 struct t_PartitionData {
-    void* data;
     uint16 disk;
     uint16 fsType;
     uint32 start;
     uint32 sectors;
     FSEntry root;
+    uint32 reserved[4];
 };
 
 struct t_FSEntryEnumerator {
-    FSDirectory* where;
-    void* data;
+    FSEntry* where;
+    uint32 reserved[4];
     FSEntry current;
     EntryEnumNext moveNext;
 };
 #pragma pack (pop)
 
-PartitionData parts[PT_MaxParts];
-
+PartitionData Parts[PT_MaxParts];
+// Регистрирует новый FAT32 раздел
 uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors);
+// Считывает данные с раздела
+uint16 PartitionReadSectors(uint16 partition, uint32 start, uint32 sectors, void* to);
+// Записывает данные на раздел
+uint16 PartitionWriteSectors(uint16 partition, uint32 start, uint32 sectors, void* to);
 #endif

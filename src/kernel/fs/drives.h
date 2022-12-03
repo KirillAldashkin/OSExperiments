@@ -12,6 +12,7 @@
 #define FS_WrongAddress  2
 #define FS_DeviceError   3
 #define FS_TooMuchDisks  4
+#define FS_PartNotFound  5
 
 // Функция считывания данных. Принимает: 
 // 1) указатель на сведения о диске
@@ -19,7 +20,7 @@
 // 3) количество секторов для считывания
 // 4) указатель на буффер для считывания
 // Возвращает код ошибки
-typedef uint16(*DataReader)(void*, uint32, uint8, void*);
+typedef uint16(*DataReader)(uint32*, uint32, uint8, void*);
 
 // Функция считывания данных. Принимает: 
 // 1) указатель на сведения о диске
@@ -27,26 +28,26 @@ typedef uint16(*DataReader)(void*, uint32, uint8, void*);
 // 3) количество секторов для записи
 // 4) указатель на данные для записи
 // Возвращает код ошибки
-typedef uint16(*DataWriter)(void*, uint32, uint8, void*);
+typedef uint16(*DataWriter)(uint32*, uint32, uint8, void*);
 
 // Функция возвращения размера. Принимает: 
 // 1) указатель на сведения о диске
 // Возвращает размер диска в секторах
-typedef uint32(*SizeGetter)(void*);
+typedef uint32(*SizeGetter)(uint32*);
 
 // Функция возвращения имени. Принимает: 
 // 1) указатель на сведения о диске
 // Возвращает имя диска
-typedef string(*NameGetter)(void*);
+typedef string(*NameGetter)(uint32*);
 
 #pragma pack (push, 1)
 // Сведения о диске
 typedef struct {
-    void* implData;
     DataReader read;
     DataWriter write;
     SizeGetter getSize;
     NameGetter getName;
+    uint32 reserved[4];
 } DiskData;
 #pragma pack (pop)
 
@@ -58,4 +59,6 @@ uint16 AddDisk(DiskData data);
 void InitSectorsCache();
 // Считывает данные с диска.
 uint16 ReadSectors(uint16 drive, uint32 lba, uint8 sectors, void* to);
+// Записывает данные на диск.
+uint16 WriteSectors(uint16 drive, uint32 lba, uint8 sectors, void* to);
 #endif

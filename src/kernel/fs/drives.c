@@ -53,12 +53,12 @@ static uint16 cacheIndex = 0;
 
 uint16 AddDisk(DiskData data) {
 	if (disksRegistered == FS_MaxDisks) return FS_TooMuchDisks;
-	uint32 size = data.getSize(data.implData);
+	uint32 size = data.getSize(data.reserved);
 #if ADDING_DEBUG
 	Write("New drive [");
 	WriteU8((uint8)disksRegistered);
 	Write("]: ");
-	Write(data.getName(data.implData));
+	Write(data.getName(data.reserved));
 	Write(" (0x");
 	WriteU32(size / 2 / 1024);
 	WriteLine("MB)");
@@ -68,7 +68,7 @@ uint16 AddDisk(DiskData data) {
 		disksRegistered++;
 
 		MBR mbr;
-		data.read(data.implData, 0, 1, &mbr);
+		data.read(data.reserved, 0, 1, &mbr);
 		for (uint8 part = 0; part < 4; part++) {
 			uint8 type = mbr.partitions[part].type;
 			if (type == FS_MBR_FAT32Mark1 || type == FS_MBR_FAT32Mark2)
@@ -125,16 +125,14 @@ uint16 ReadSectors(uint16 drive, uint32 lba, uint8 sectors, void* to) {
 #endif
 			// Нету в кэше, считываем
 			if (!SectorsCache[cacheIndex].free && SectorsCache[cacheIndex].dirty) {
-#if CACHING_DEBUG
-				WriteLine("Write this cache entry");
-#endif
+				WriteLine("!!! Implement cahce writing !!!");
 				// TODO Сохраняем эту запись в кэше перед перезаписью
 			}
 			// Читаем в кэш
 			SectorsCache[cacheIndex].free = false;
 			SectorsCache[cacheIndex].dirty = false;
 			SectorsCache[cacheIndex].lba = lbas;
-			uint16 err = Disks[drive].read(Disks[drive].implData, lbas, 1, SectorsCache[cacheIndex].data);
+			uint16 err = Disks[drive].read(Disks[drive].reserved, lbas, 1, SectorsCache[cacheIndex].data);
 			if (err != FS_Ok) return err;
 			// Есть в кэше, копируем
 			MemoryCopy(buff, SectorsCache[cacheIndex].data, SectorBytes);
@@ -145,4 +143,8 @@ uint16 ReadSectors(uint16 drive, uint32 lba, uint8 sectors, void* to) {
 	}
 	return FS_Ok;
 	// TODO считать секторы, учитывая кэш
+}
+
+uint16 WriteSectors(uint16 drive, uint32 lba, uint8 sectors, void* to) {
+	WriteLine("!!! Implement writing sectors !!!");
 }
