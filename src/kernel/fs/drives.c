@@ -147,4 +147,5 @@ uint16 ReadSectors(uint16 drive, uint32 lba, uint8 sectors, void* to) {
 
 uint16 WriteSectors(uint16 drive, uint32 lba, uint8 sectors, void* to) {
 	WriteLine("!!! Implement writing sectors !!!");
+	return 0;
 }

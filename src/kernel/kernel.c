@@ -23,30 +23,64 @@ void KernelEntry() {
 	ShellInit(HandleCommand);
 	InitSectorsCache();
 	InitIDE((uint32[5]) { 0x1F0, 0x3F6, 0x170, 0x376, 0x000 });
-
-	FSEntryEnumerator enumr = Parts[0].root.dir.getEnumerator(&Parts[0].root);
-	while (enumr.moveNext(&enumr));
 }
 
+void PrintTreePartition(FSEntry* entry, uint16 ident);
 void PrintMemMap();
 void PrintHelp();
 void PrintPCIDevice(uint8 bus, uint8 slot, uint8 func, PCIHeaderCommon* id);
 
 void HandleCommand(string cmd) {
-	if(StringCompare(cmd, "memmap") == 0) PrintMemMap();
-	else if(StringCompare(cmd, "listpci") == 0) PCIEnumerateDevices(PrintPCIDevice);
-	else if(StringCompare(cmd, "clear") == 0) ClearScreen();
-	else if(StringCompare(cmd, "help") == 0) PrintHelp();
-	else if(StringCompare(cmd, "crash") == 0) { volatile int b = 0; b /= b; } 
+	if (StringCompare(cmd, "memmap") == 0) PrintMemMap();
+	else if (StringCompare(cmd, "listpci") == 0) PCIEnumerateDevices(PrintPCIDevice);
+	else if (StringCompare(cmd, "clear") == 0) ClearScreen();
+	else if (StringCompare(cmd, "help") == 0) PrintHelp();
+	else if (StringCompare(cmd, "crash") == 0) { volatile int b = 0; b /= b; }
+	else if (StringCompare(cmd, "filetree") == 0) PrintTreePartition(&Parts[0].root, 0);
 	else WriteLine("Unknown command.");
 }
 
 void PrintHelp() {
-	WriteLine("help    - print this help.");
-	WriteLine("clear   - clears screen.");
-	WriteLine("crash   - crashes system.");
-	WriteLine("memmap  - prints memory map.");
-	WriteLine("listpci - lists all PCI devices.");
+	WriteLine("help     - prints this help.");
+	WriteLine("clear    - clears screen.");
+	WriteLine("crash    - crashes system.");
+	WriteLine("memmap   - prints memory map.");
+	WriteLine("listpci  - lists all PCI devices.");
+	WriteLine("filetree - prints file tree of a first partition on a first disk.");
+}
+
+void PrintSpaces(uint16 count) {
+	while (count-- > 0) WriteChar(' ');
+}
+void PrintTreePartition(FSEntry* entry, uint16 ident) {
+	FSEntryEnumerator enumr = entry->dir.getEnumerator(entry);
+	while (enumr.moveNext(&enumr)) {
+		char name[12];
+		name[11] = '\0';
+		enumr.current.getName(&enumr.current, name, 11);
+		if (StringCompare(name, ".          ") == 0) continue;
+		if (StringCompare(name, "..         ") == 0) continue;
+
+		PrintSpaces(ident);
+		if (enumr.current.type == PT_EntryFile)
+			Write("FILE ");
+		else
+			Write("DIR  ");
+
+		Write("\"");
+		Write(name);
+		Write("\"");
+		if (enumr.current.type == PT_EntryFile) {
+			Write(" 0x");
+			WriteU32(enumr.current.file.getSize(&enumr.current));
+			Write(" bytes");
+		}
+
+		WriteLine("");
+		if (enumr.current.type == PT_EntryDir) {
+			PrintTreePartition(&enumr.current, ident + 1);
+		}
+	}
 }
 
 void PrintMemMap() {

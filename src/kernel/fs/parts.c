@@ -60,6 +60,14 @@ typedef struct {
 #define FAT32Free(cluster) (cluster > 0x0FFFFFF7)
 #define FAT32DoNotUse(cluster) (cluster >= 0x0FFFFFF7)
 
+#define FATAttrReadOnly 0x01 
+#define FATAttrHidden 0x02 
+#define FATAttrSystem 0x04 
+#define FATAttrVolumeID 0x08 
+#define FATAttrDirectory 0x10 
+#define FATAttrArchive 0x20 
+#define FATAttrLFN (FATAttrReadOnly | FATAttrHidden | FATAttrSystem | FATAttrVolumeID)
+
 static uint16 partsRegistered = 0;
 
 uint8 readCache[512];
@@ -69,12 +77,32 @@ uint32 FAT32nextCluster(uint16 partition, uint32 cluster) {
 	uint32 lbaFatOffset = cluster / (SectorBytes / sizeof(uint32));
 	uint32 clusterInSector = cluster % (SectorBytes / sizeof(uint32));
 	if(PartitionReadSectors(partition, lbaFatStart + lbaFatOffset, 1, readCache) != FS_Ok) return FAT32BadCluster;
-	return ((uint32*)readCache)[clusterInSector];
+	return ((uint32*)readCache)[clusterInSector] & 0x0FFFFFFF;
 }
 
 uint32 FAT32clusterToSector(uint16 partition, uint32 cluster) {
-	uint32 sector = Parts[partition].reserved[0] * (cluster - 2);
+	uint32 rootDir = Parts[partition].reserved[2];
+	uint32 sector = Parts[partition].reserved[0] * (cluster - rootDir);
 	return sector + Parts[partition].reserved[3];
+}
+
+bool FAT32getName(FSEntry* which, string to, uint16 length) {
+	if (length < 11) return false;
+	uint32 sector = which->reserved[2];
+	uint32 entry = which->reserved[3];
+	if (PartitionReadSectors(which->partition, sector, 1, readCache) != FS_Ok) return false;
+	FAT32FileEntry* e = ((FAT32FileEntry*)readCache) + entry;
+	MemoryCopy(to, e->name, 11);
+	return true;
+}
+
+uint32 FAT32getSize(FSEntry* which) {
+	if (which->type != PT_EntryFile) return 0;
+	uint32 sector = which->reserved[2];
+	uint32 entry = which->reserved[3];
+	if (PartitionReadSectors(which->partition, sector, 1, readCache) != FS_Ok) return false;
+	FAT32FileEntry* e = ((FAT32FileEntry*)readCache) + entry;
+	return e->fileBytes;
 }
 
 bool rootDirGetName(FSEntry* which, string buff, uint16 buffLen) {
@@ -83,6 +111,17 @@ bool rootDirGetName(FSEntry* which, string buff, uint16 buffLen) {
 	MemoryCopy(buff, "pt_____", 7);
 	UIntToString(which->partition, buff + 2, 10);
 	return true;
+}
+
+bool FAT32moveNext(FSEntryEnumerator* which);
+
+FSEntryEnumerator FAT32getDirEnumerator(FSEntry* which) {
+	FSEntryEnumerator ret;
+	ret.reserved[0] = which->reserved[0]; // текущий кластер
+	ret.reserved[1] = 0xFFFFFFFF;         // текущая запись
+	ret.where = which;
+	ret.moveNext = FAT32moveNext;
+	return ret;
 }
 
 uint16 index = 0;
@@ -99,17 +138,17 @@ bool FAT32moveNext(FSEntryEnumerator* which) {
 	uint32 sectorsPerCluster = Parts[partition].reserved[0];
 	uint32 maxEntryInCluster = FAT32EntriesPerSector * sectorsPerCluster;
 
-	Write("Current cluster 0x");
-	WriteU32(which->reserved[0]);
+	//Write("Current cluster 0x");
+	//WriteU32(which->reserved[0]);
 	if (which->reserved[1] > maxEntryInCluster) {
 		// двигаемся в следующий кластер
 		which->reserved[1] = 0;
 		which->reserved[0] = FAT32nextCluster(partition, which->reserved[0]);
-		Write(" - next cluster 0x");
-		WriteU32(which->reserved[0]);
+		//Write(" - next cluster 0x");
+		//WriteU32(which->reserved[0]);
 		if (FAT32DoNotUse(which->reserved[0])) return false;
 	}
-	WriteLine("");
+	//WriteLine("");
 
 	uint32 sector = which->reserved[1] / FAT32EntriesPerSector;
 	uint32 fSector = FAT32clusterToSector(partition, which->reserved[0]) + sector;
@@ -121,26 +160,27 @@ bool FAT32moveNext(FSEntryEnumerator* which) {
 	uint32 entryIndex = which->reserved[1] % FAT32EntriesPerSector;
 	FAT32FileEntry* entry = ((FAT32FileEntry*)readCache) + entryIndex;
 	if (entry->attributes == 0) return false;
+	if (entry->attributes == FATAttrLFN || (entry->attributes & FATAttrVolumeID)) {
+		// LFN не поддерживается, пропускаем такие файлы
+		return FAT32moveNext(which);
+	}
 	which->current.partition= which->where->partition;
-	which->current.reserved[0] = (entry->high16firstCluster << 16) + entry->low16firstCluster;
-	which->current.reserved[1] = 0;
+	which->current.reserved[0] = (entry->high16firstCluster << 16) + entry->low16firstCluster; // кластер начала данных
+	which->current.reserved[2] = fSector; // сектор записи
+	which->current.reserved[3] = entryIndex; // номер записи в секторе
 	which->current.parent = &(which->where->dir);
-	char name[12];
-	name[11] = '\0';
-	MemoryCopy(entry->name, name, 11);
-	Write("File size: ");
-	WriteU32(entry->fileBytes);
-	WriteLine("");
-	return true;
-}
+	which->current.getName = FAT32getName;
+	
+	if (entry->attributes & FATAttrDirectory) {
+		which->current.type = PT_EntryDir;
+		which->current.dir.getEnumerator = FAT32getDirEnumerator;
+	} else {
+		which->current.type = PT_EntryFile;
+		which->current.file.getSize = FAT32getSize;
+		which->current.file.read = nullptr;
+	}
 
-FSEntryEnumerator FAT32getEnumerator(FSEntry* which) {
-	FSEntryEnumerator ret;
-	ret.reserved[0] = which->reserved[0]; // текущий кластер
-	ret.reserved[1] = 0xFFFFFFFF; // текущая запись
-	ret.where = which;
-	ret.moveNext = FAT32moveNext;
-	return ret;
+	return true;
 }
 
 uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors) {
@@ -170,10 +210,10 @@ uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors) {
 	data.root.parent = nullptr;
 	data.root.getName = rootDirGetName;
 	data.root.reserved[0] = bpb.rootDirectoryCluster; // кластер начала
-	data.root.dir.getEnumerator = FAT32getEnumerator;
+	data.root.dir.getEnumerator = FAT32getDirEnumerator;
 	data.reserved[0] = bpb.sectorsPerCluster; // секторов на кластер
 	data.reserved[1] = bpb.reservedSectors; // LBA начала FAT таблиц
-	data.reserved[2] = bpb.sectorsPerFAT32; // секторов на FAT
+	data.reserved[2] = bpb.rootDirectoryCluster; // кластер корневой директории
 	data.reserved[3] = bpb.reservedSectors + bpb.fats * bpb.sectorsPerFAT32; // LBA начала данных
 
 	Parts[partsRegistered] = data;
