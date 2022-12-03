@@ -57,7 +57,10 @@ int8 StringCompare(string s1, string s2)
 }
 
 bool StartsWith(string str, string prefix) {
-
+	uint32 len = StringLength(prefix);
+	for (uint32 i = 0; i < len; i++) {
+		if (str[i] != prefix[i]) return false;
+	}
 	return true;
 }
 

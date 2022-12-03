@@ -3,6 +3,7 @@
 #include "../drivers/screen.h"
 #include "../utils/strings.h"
 #include "../utils/memory.h"
+#include "../utils/types.h"
 
 #pragma pack (push, 1)
 typedef struct {
@@ -119,6 +120,51 @@ uint32 FAT32getSize(FSEntry* which) {
 	return e->fileBytes;
 }
 
+void FAT32readFile(FSEntry* which, uint32 offset, uint32 length, void* to) {
+	uint8* buf = (uint8*)to;
+	if (which->type != PT_EntryFile) return;
+	uint32 lengthRemain = which->file.getSize(which);
+	uint32 sectorsCluster = Parts[which->partition].reserved[0];
+	uint32 bytesCluster = SectorBytes * sectorsCluster;
+
+	uint32 cluster = which->reserved[0];
+	while (offset > bytesCluster) {
+		offset -= bytesCluster;
+		cluster = FAT32nextCluster(which->partition, cluster);
+		if (FAT32DoNotUse(cluster)) return;
+	}
+	uint16 sectorInCluster = 0;
+	while (offset > SectorBytes) {
+		sectorInCluster++;
+		offset -= SectorBytes;
+	}
+	uint32 lba = FAT32clusterToSector(which->partition, cluster) + sectorInCluster;
+
+	if (PartitionReadSectors(which->partition, lba, 1, readCache) != FS_Ok) return;
+	sectorInCluster++;
+	uint32 toCpy = min(lengthRemain, SectorBytes - offset);
+	MemoryCopy(buf, readCache + offset, toCpy);
+	lengthRemain -= toCpy;
+	if (lengthRemain == 0) return;
+	buf += SectorBytes;
+
+	while (true) {
+		if (sectorInCluster == sectorsCluster) {
+			sectorInCluster = 0;
+			cluster = FAT32nextCluster(which->partition, cluster);
+			if (FAT32DoNotUse(cluster)) return;
+		}
+		toCpy = min(lengthRemain, SectorBytes);
+		lba = FAT32clusterToSector(which->partition, cluster) + sectorInCluster;
+		if (PartitionReadSectors(which->partition, lba, 1, readCache) != FS_Ok) return;
+		MemoryCopy(buf, readCache, toCpy);
+		lengthRemain -= toCpy;
+		if (lengthRemain == 0) return;
+		buf += SectorBytes;
+		sectorInCluster++;
+	}
+}
+
 bool rootDirGetName(FSEntry* which, string buff, uint16 buffLen) {
 	if (which->type != PT_EntryDir) return false;
 	if (buffLen < 7) return false;
@@ -193,7 +239,7 @@ bool FAT32moveNext(FSEntryEnumerator* which) {
 	} else {
 		which->current.type = PT_EntryFile;
 		which->current.file.getSize = FAT32getSize;
-		which->current.file.read = nullptr;
+		which->current.file.read = (FileReader)FAT32readFile;
 	}
 
 	char name[12]; which->current.getName(&which->current, name, 12);

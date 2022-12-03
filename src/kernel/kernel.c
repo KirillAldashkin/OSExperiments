@@ -36,6 +36,7 @@ void KernelEntry() {
 void PrintMemMap();
 void PrintHelp();
 void EnumerateFiles();
+void TypeFile(string name);
 void CurrentDirectory(string name);
 void PrintPCIDevice(uint8 bus, uint8 slot, uint8 func, PCIHeaderCommon* id);
 
@@ -46,7 +47,8 @@ void HandleCommand(string cmd) {
 	else if (StringCompare(cmd, "help") == 0) PrintHelp();
 	else if (StringCompare(cmd, "crash") == 0) { volatile int b = 0; b /= b; }
 	else if (StringCompare(cmd, "dir") == 0) EnumerateFiles();
-	else if (StartsWith(cmd, "cd")) CurrentDirectory(cmd+3);
+	else if (StartsWith(cmd, "type")) TypeFile(cmd + 5);
+	else if (StartsWith(cmd, "cd")) CurrentDirectory(cmd + 3);
 	else WriteLine("Unknown command.");
 	WritePath();
 }
@@ -59,6 +61,7 @@ void PrintHelp() {
 	WriteLine("listpci - lists all PCI devices.");
 	WriteLine("dir     - lists files in current directory");
 	WriteLine("cd      - moves to the directory specified");
+	WriteLine("type    - prints specified file");
 }
 
 void CurrentDirectory(string name) {
@@ -82,6 +85,25 @@ void CurrentDirectory(string name) {
 		}
 	}
 	WriteLine("Directory not found.");
+}
+
+void TypeFile(string name) {
+	FSEntry* cur = currentPath + currentPathDepth - 1;
+	FSEntryEnumerator en = cur->dir.getEnumerator(cur);
+	while (en.moveNext(&en)) {
+		if (en.current.type != PT_EntryFile) continue;
+		char inName[12];
+		en.current.getName(&en.current, inName, 12);
+		if (StringCompare(inName, name) == 0) {
+			uint32 size = en.current.file.getSize(&en.current);
+			uint8* buffer = (uint8*)0x400000; // TODO temporary
+			en.current.file.read(&en.current, 0, size, buffer);
+			buffer[size] = '\0';
+			WriteLine(buffer);
+			return;
+		}
+	}
+	WriteLine("File not found.");
 }
 
 void EnumerateFiles() {
