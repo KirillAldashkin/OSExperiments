@@ -54,4 +54,8 @@ DiskData Disks[FS_MaxDisks];
 
 // Регистрирует новый диск.
 uint16 AddDisk(DiskData data);
+// Инициализирует кэш секторов.
+void InitSectorsCache();
+// Считывает данные с диска.
+uint16 ReadSectors(uint16 drive, uint32 lba, uint8 sectors, void* to);
 #endif

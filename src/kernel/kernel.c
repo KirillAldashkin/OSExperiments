@@ -9,6 +9,7 @@
 #include "hardware/pci.h"
 #include "memorymap.h"
 #include "shell.h"
+#include "fs/drives.h"
 
 void HandleCommand(string cmd);
 
@@ -19,6 +20,7 @@ void KernelEntry() {
 	SetupInterrupts();
 	SetupIRQ();
 	ShellInit(HandleCommand);
+	InitSectorsCache();
 	InitIDE((uint32[5]) { 0x1F0, 0x3F6, 0x170, 0x376, 0x000 });
 }
 

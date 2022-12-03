@@ -70,7 +70,7 @@ uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors) {
 	data.root.dir.getEnumerator = rootDirFAT32getEnumerator;
 
 	BPB bpb;
-	Disks[disk].read(Disks[disk].implData, start, 1, &bpb);
+	ReadSectors(disk, start, 1, &bpb);
 
 	Write("New FAT32 partition [");
 	WriteU8((uint8)partsRegistered);
