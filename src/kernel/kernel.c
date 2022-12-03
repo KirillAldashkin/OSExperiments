@@ -12,7 +12,11 @@
 #include "fs/drives.h"
 #include "fs/parts.h"
 
+static uint16 currentPathDepth = 0;
+static FSEntry currentPath[128];
+
 void HandleCommand(string cmd);
+void WritePath();
 
 void KernelEntry() {
 	ClearScreen();
@@ -23,11 +27,16 @@ void KernelEntry() {
 	ShellInit(HandleCommand);
 	InitSectorsCache();
 	InitIDE((uint32[5]) { 0x1F0, 0x3F6, 0x170, 0x376, 0x000 });
+
+	currentPath[0] = Parts[0].root;
+	currentPathDepth = 1;
+	WritePath();
 }
 
-void PrintTreePartition(FSEntry* entry, uint16 ident);
 void PrintMemMap();
 void PrintHelp();
+void EnumerateFiles();
+void CurrentDirectory(string name);
 void PrintPCIDevice(uint8 bus, uint8 slot, uint8 func, PCIHeaderCommon* id);
 
 void HandleCommand(string cmd) {
@@ -36,51 +45,77 @@ void HandleCommand(string cmd) {
 	else if (StringCompare(cmd, "clear") == 0) ClearScreen();
 	else if (StringCompare(cmd, "help") == 0) PrintHelp();
 	else if (StringCompare(cmd, "crash") == 0) { volatile int b = 0; b /= b; }
-	else if (StringCompare(cmd, "filetree") == 0) PrintTreePartition(&Parts[0].root, 0);
+	else if (StringCompare(cmd, "dir") == 0) EnumerateFiles();
+	else if (StartsWith(cmd, "cd")) CurrentDirectory(cmd+3);
 	else WriteLine("Unknown command.");
+	WritePath();
 }
 
 void PrintHelp() {
-	WriteLine("help     - prints this help.");
-	WriteLine("clear    - clears screen.");
-	WriteLine("crash    - crashes system.");
-	WriteLine("memmap   - prints memory map.");
-	WriteLine("listpci  - lists all PCI devices.");
-	WriteLine("filetree - prints file tree of a first partition on a first disk.");
+	WriteLine("help    - prints this help.");
+	WriteLine("clear   - clears screen.");
+	WriteLine("crash   - crashes system.");
+	WriteLine("memmap  - prints memory map.");
+	WriteLine("listpci - lists all PCI devices.");
+	WriteLine("dir     - lists files in current directory");
+	WriteLine("cd      - moves to the directory specified");
 }
 
-void PrintSpaces(uint16 count) {
-	while (count-- > 0) WriteChar(' ');
-}
-void PrintTreePartition(FSEntry* entry, uint16 ident) {
-	FSEntryEnumerator enumr = entry->dir.getEnumerator(entry);
-	while (enumr.moveNext(&enumr)) {
-		char name[12];
-		name[11] = '\0';
-		enumr.current.getName(&enumr.current, name, 11);
-		if (StringCompare(name, ".          ") == 0) continue;
-		if (StringCompare(name, "..         ") == 0) continue;
+void CurrentDirectory(string name) {
+	if (StringCompare(name, ".") == 0) return;
+	if (currentPathDepth == 0 || currentPathDepth == 128) return;
+	if ((StringCompare(name, "..") == 0)) {
+		if(currentPathDepth > 1) currentPathDepth--;
+		return;
+	}
 
-		PrintSpaces(ident);
-		if (enumr.current.type == PT_EntryFile)
-			Write("FILE ");
-		else
-			Write("DIR  ");
-
-		Write("\"");
-		Write(name);
-		Write("\"");
-		if (enumr.current.type == PT_EntryFile) {
-			Write(" 0x");
-			WriteU32(enumr.current.file.getSize(&enumr.current));
-			Write(" bytes");
-		}
-
-		WriteLine("");
-		if (enumr.current.type == PT_EntryDir) {
-			PrintTreePartition(&enumr.current, ident + 1);
+	FSEntry* cur = currentPath + currentPathDepth - 1;
+	FSEntryEnumerator en = cur->dir.getEnumerator(cur);
+	while (en.moveNext(&en)) {
+		if (en.current.type != PT_EntryDir) continue;
+		char inName[12];
+		en.current.getName(&en.current, inName, 12);
+		if (StringCompare(inName, name) == 0) {
+			currentPath[currentPathDepth] = en.current;
+			currentPathDepth++;
+			return;
 		}
 	}
+	WriteLine("Directory not found.");
+}
+
+void EnumerateFiles() {
+	if (currentPathDepth == 0) return;
+	FSEntry* cur = currentPath + currentPathDepth - 1;
+	FSEntryEnumerator en = cur->dir.getEnumerator(cur);
+	while (en.moveNext(&en)) {
+		if (en.current.type == PT_EntryFile) {
+			Write("FILE | ");
+		} else {
+			Write("DIR  | ");
+		}
+		char name[12];
+		en.current.getName(&en.current, name, 12);
+		Write(name);
+		if (en.current.type == PT_EntryFile) {
+			string sizeStr = " ____________ bytes";
+			MemorySet(sizeStr+1, ' ', 12);
+			UIntToString(en.current.file.getSize(&en.current), sizeStr+1, 10);
+			Write(sizeStr);
+		}
+		WriteLine("");
+	}
+}
+
+void WritePath() {
+	for (uint16 i = 0; i < currentPathDepth; i++) {
+		WriteChar('/');
+		char name[12];
+		name[11] = '\0';
+		currentPath[i].getName(&currentPath[i], name, 11);
+		Write(name);
+	}
+	WriteChar('>');
 }
 
 void PrintMemMap() {

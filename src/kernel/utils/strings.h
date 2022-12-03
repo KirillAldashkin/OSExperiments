@@ -12,6 +12,8 @@ void UIntToString(uint32 number, string str, uint8 radix);
 uint32 StringLength(string str);
 // Сравнивает две строки.
 int8 StringCompare(string s1, string s2);
+// Определяет, начинается ли одна строка другой строкой.
+bool StartsWith(string str, string prefix);
 
 // Проверяет, является ли символ цифрой.
 bool CharIsNumber(char c);

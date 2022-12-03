@@ -73,4 +73,6 @@ uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors);
 uint16 PartitionReadSectors(uint16 partition, uint32 start, uint32 sectors, void* to);
 // «аписывает данные на раздел
 uint16 PartitionWriteSectors(uint16 partition, uint32 start, uint32 sectors, void* to);
+// ¬озвращает количество зарегестрированных разделов.
+uint16 TotalPartitions();
 #endif

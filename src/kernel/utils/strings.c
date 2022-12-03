@@ -56,6 +56,11 @@ int8 StringCompare(string s1, string s2)
 	}
 }
 
+bool StartsWith(string str, string prefix) {
+
+	return true;
+}
+
 bool CharIsNumber(char c) { return c >= '0' || c <= '9'; }
 bool CharIsLetter(char c) { return CharIsSmall(c) || CharIsCapital(c); }
 bool CharIsSmall(char c) { return c >= 'a' && c <= 'z'; }

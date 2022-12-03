@@ -69,7 +69,7 @@ typedef struct {
 #define FATAttrLFN (FATAttrReadOnly | FATAttrHidden | FATAttrSystem | FATAttrVolumeID)
 
 static uint16 partsRegistered = 0;
-
+uint16 TotalPartitions() { return partsRegistered; }
 uint8 readCache[512];
 
 uint32 FAT32nextCluster(uint16 partition, uint32 cluster) {
@@ -87,12 +87,26 @@ uint32 FAT32clusterToSector(uint16 partition, uint32 cluster) {
 }
 
 bool FAT32getName(FSEntry* which, string to, uint16 length) {
-	if (length < 11) return false;
 	uint32 sector = which->reserved[2];
 	uint32 entry = which->reserved[3];
 	if (PartitionReadSectors(which->partition, sector, 1, readCache) != FS_Ok) return false;
 	FAT32FileEntry* e = ((FAT32FileEntry*)readCache) + entry;
-	MemoryCopy(to, e->name, 11);
+	uint8 nameLen = 8;
+	while ((nameLen > 0) && (e->name[nameLen - 1] == ' ')) nameLen--;
+	uint8 extLen = 3;
+	while ((extLen > 0) && (e->name[extLen + 7] == ' ')) extLen--;
+
+	if (extLen > 0) {
+		if (length < (nameLen + 1 + extLen + 1)) return false;
+		MemoryCopy(to, e->name, nameLen);
+		to[nameLen] = '.';
+		MemoryCopy(to + nameLen + 1, e->name + 8, extLen);
+		to[nameLen + extLen + 1] = '\0';
+	} else {
+		if (length < (nameLen + 1)) return false;
+		MemoryCopy(to, e->name, nameLen);
+		to[nameLen] = '\0';
+	}
 	return true;
 }
 
@@ -160,10 +174,12 @@ bool FAT32moveNext(FSEntryEnumerator* which) {
 	uint32 entryIndex = which->reserved[1] % FAT32EntriesPerSector;
 	FAT32FileEntry* entry = ((FAT32FileEntry*)readCache) + entryIndex;
 	if (entry->attributes == 0) return false;
-	if (entry->attributes == FATAttrLFN || (entry->attributes & FATAttrVolumeID)) {
+	if ((entry->attributes == FATAttrLFN) || 
+		(entry->attributes & FATAttrVolumeID)) {
 		// LFN не поддерживается, пропускаем такие файлы
 		return FAT32moveNext(which);
 	}
+
 	which->current.partition= which->where->partition;
 	which->current.reserved[0] = (entry->high16firstCluster << 16) + entry->low16firstCluster; // кластер начала данных
 	which->current.reserved[2] = fSector; // сектор записи
@@ -178,6 +194,13 @@ bool FAT32moveNext(FSEntryEnumerator* which) {
 		which->current.type = PT_EntryFile;
 		which->current.file.getSize = FAT32getSize;
 		which->current.file.read = nullptr;
+	}
+
+	char name[12]; which->current.getName(&which->current, name, 12);
+	if ((StringCompare(name, ".") == 0) ||
+		(StringCompare(name, "..") == 0)) {
+		// Игнорируем такие папки
+		return FAT32moveNext(which);
 	}
 
 	return true;

@@ -40,8 +40,8 @@ void shellHandleChar(bool down, char sym) {
 		Back();
 	} else if(sym > 0 && down && pos < bufLen) {
 		// Иначе просто выводим
-		buffer[pos++] = sym;
 		if(shift != caps) sym = CharToCapital(sym);
+		buffer[pos++] = sym;
 		WriteChar(sym);
 	}
 }
