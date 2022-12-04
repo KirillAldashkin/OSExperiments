@@ -64,6 +64,35 @@ bool StartsWith(string str, string prefix) {
 	return true;
 }
 
+uint32 SIntLength(int32 number, uint8 radix) {
+	if (number == MIN_S32) return 11;
+	if (number == 0) return 1;
+
+	uint32 len = 0;
+	if (number < 0) {
+		len++;
+		number *= -1;
+	}
+
+	while (number > 0) {
+		number /= radix;
+		len++;
+	}
+	return len;
+}
+
+uint32 UIntLength(uint32 number, uint8 radix) {
+	if (number == 0) return 1;
+
+	uint32 len = 0;
+
+	while (number > 0) {
+		number /= radix;
+		len++;
+	}
+	return len;
+}
+
 bool CharIsNumber(char c) { return c >= '0' || c <= '9'; }
 bool CharIsLetter(char c) { return CharIsSmall(c) || CharIsCapital(c); }
 bool CharIsSmall(char c) { return c >= 'a' && c <= 'z'; }

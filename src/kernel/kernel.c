@@ -47,8 +47,8 @@ void HandleCommand(string cmd) {
 	else if (StringCompare(cmd, "help") == 0) PrintHelp();
 	else if (StringCompare(cmd, "crash") == 0) { volatile int b = 0; b /= b; }
 	else if (StringCompare(cmd, "dir") == 0) EnumerateFiles();
-	else if (StartsWith(cmd, "type")) TypeFile(cmd + 5);
-	else if (StartsWith(cmd, "cd")) CurrentDirectory(cmd + 3);
+	else if (StartsWith(cmd, "type ")) TypeFile(cmd + 5);
+	else if (StartsWith(cmd, "cd ")) CurrentDirectory(cmd + 3);
 	else WriteLine("Unknown command.");
 	WritePath();
 }
@@ -120,9 +120,11 @@ void EnumerateFiles() {
 		en.current.getName(&en.current, name, 12);
 		Write(name);
 		if (en.current.type == PT_EntryFile) {
-			string sizeStr = " ____________ bytes";
-			MemorySet(sizeStr+1, ' ', 12);
-			UIntToString(en.current.file.getSize(&en.current), sizeStr+1, 10);
+			char sizeStr[32]; sizeStr[0] = ' ';
+			uint32 size = en.current.file.getSize(&en.current);
+			uint32 len = UIntLength(size, 10);
+			UIntToString(size, sizeStr+1, 10);
+			MemoryCopy(sizeStr + 1 + len, " bytes", 7);
 			Write(sizeStr);
 		}
 		WriteLine("");

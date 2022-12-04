@@ -4,6 +4,10 @@
 
 #include "types.h"
 
+// Определяет длину данного числа при записи в строку.
+uint32 SIntLength(int32 number, uint8 radix);
+// Определяет длину данного числа при записи в строку.
+uint32 UIntLength(uint32 number, uint8 radix);
 // Преобразует данное число в строку.
 void SIntToString(int32 number, string str, uint8 radix);
 // Преобразует данное число в строку.

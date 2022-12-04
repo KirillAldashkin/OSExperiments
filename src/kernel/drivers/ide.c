@@ -197,29 +197,57 @@ uint8 AccessIDEDrive(uint8 action, uint8 drive, uint32 lba, uint8 sectors, void*
     if (drive >= MaxDrives) return ATA_WrongDrive;                         // Неверный номер диска
     if (!IDEDevices[drive].IsPresent) return ATA_WrongDrive;               // Нет такого диска
     if (!(IDEDevices[drive].Capabilities & 0x200)) return ATA_NonLBADrive; // Пока поддерживается только диски с LBA адресацией
-    if (lba > 0xFFFFFFF) return ATA_DiskAddressOutOfBounds;                // Слишком большой адрес для LBA28
-
+    
     uint8 channel = IDEDevices[drive].Channel;
 
     // Отрубаем прерывания
     IDEWrite(channel, ATA_RegControl, Channels[channel].NoInt = (IDE_Irq = 0x0) + 0x02);
 
     // Готовим данные
-    uint8 lbaBuffer[3];
-    lbaBuffer[0] =  lba & 0x00000FF;
-    lbaBuffer[1] = (lba & 0x000FF00) >> 8;
-    lbaBuffer[2] = (lba & 0x0FF0000) >> 16;
-    uint8 head = (lba & 0xF000000) >> 24;
+    uint8 lbaBuffer[4];
+    uint8 head;
+    bool isLBA48 = lba > 0xFFFFFFF;
+    if (isLBA48) {
+        // LBA48
+        lbaBuffer[0] = lba & 0x000000FF;
+        lbaBuffer[1] = (lba & 0x0000FF00) >> 8;
+        lbaBuffer[2] = (lba & 0x00FF0000) >> 16;
+        lbaBuffer[3] = (lba & 0xFF000000) >> 24;
+        head = 0;
+    } else {
+        // LBA28
+        lbaBuffer[0] = lba & 0x00000FF;
+        lbaBuffer[1] = (lba & 0x000FF00) >> 8;
+        lbaBuffer[2] = (lba & 0x0FF0000) >> 16;
+        lbaBuffer[3] = 0;
+        head = (lba & 0xF000000) >> 24;
+    }
     uint16 bus = Channels[channel].Base;
     uint8 cmd;
-    if (action == ATA_Read) cmd = ATA_CommandReadPIO;
-    if (action == ATA_Write) cmd = ATA_CommandWritePIO;
+    if (action == ATA_Read) { 
+        if (isLBA48)
+            cmd = ATA_CommandReadPIOExt;
+        else
+            cmd = ATA_CommandReadPIO;
+    }
+    if (action == ATA_Write) {
+        if(isLBA48)
+            cmd = ATA_CommandWritePIOExt;
+        else
+            cmd = ATA_CommandWritePIO;
+    }
 
     // Ждём диск и пишем
     while (IDERead(channel, ATA_RegStatus) & ATA_Busy);
 
     IDEWrite(channel, ATA_RegHDDEVSelect, 0xE0 | (IDEDevices[drive].Drive << 4) | head);
 
+    if (isLBA48) {
+        IDEWrite(channel, ATA_RegSecCount1, 0);
+        IDEWrite(channel, ATA_RegLBA3, lbaBuffer[3]);
+        IDEWrite(channel, ATA_RegLBA4, 0);
+        IDEWrite(channel, ATA_RegLBA5, 0);
+    }
     IDEWrite(channel, ATA_RegSecCount0, sectors);
     IDEWrite(channel, ATA_RegLBA0, lbaBuffer[0]);
     IDEWrite(channel, ATA_RegLBA1, lbaBuffer[1]);

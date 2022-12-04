@@ -59,9 +59,14 @@ uint16 AddDisk(DiskData data) {
 	WriteU8((uint8)disksRegistered);
 	Write("]: ");
 	Write(data.getName(data.reserved));
-	Write(" (0x");
-	WriteU32(size / 2 / 1024);
-	WriteLine("MB)");
+	Write(" (");
+	char sizeStr[24];
+	uint32 bytes = size / 2 / 1024;
+	uint32 szLen = UIntLength(bytes, 10);
+	UIntToString(bytes, sizeStr, 10);
+	sizeStr[szLen] = '\0';
+	Write(sizeStr);
+	WriteLine(" MB)");
 #endif
 	if (size > 0) {
 		Disks[disksRegistered] = data;

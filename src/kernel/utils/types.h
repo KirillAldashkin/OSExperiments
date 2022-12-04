@@ -19,4 +19,19 @@ typedef int int32;
 typedef short int16;
 typedef char int8;
 
+#define MIN_U8 0
+#define MAX_U8 255
+#define MIN_S8 -128
+#define MAX_S8 127
+
+#define MIN_U16 0
+#define MAX_U16 65536
+#define MIN_S16 -32768
+#define MAX_S16 32767
+
+#define MIN_U32 0
+#define MAX_U32 4294967295
+#define MIN_S32 -2147483648
+#define MAX_S32 2147483647
+
 #endif

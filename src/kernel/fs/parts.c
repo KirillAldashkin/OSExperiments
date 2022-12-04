@@ -167,9 +167,11 @@ void FAT32readFile(FSEntry* which, uint32 offset, uint32 length, void* to) {
 
 bool rootDirGetName(FSEntry* which, string buff, uint16 buffLen) {
 	if (which->type != PT_EntryDir) return false;
-	if (buffLen < 7) return false;
-	MemoryCopy(buff, "pt_____", 7);
+	uint32 partLen = UIntLength(which->partition, 10);
+	if (buffLen < (2 + partLen + 1)) return false;
+	buff[0] = 'p'; buff[1] = 't';
 	UIntToString(which->partition, buff + 2, 10);
+	buff[2 + partLen] = '\0';
 	return true;
 }
 
@@ -258,16 +260,19 @@ uint16 AddFAT32Partition(uint16 disk, uint32 start, uint32 sectors) {
 	BPB bpb;
 	ReadSectors(disk, start, 1, &bpb);
 
-	Write("New FAT32 partition [");
-	WriteU8((uint8)partsRegistered);
-	Write("]: \"");
+	Write("New FAT32 partition: ");
 	char name[12];
 	name[11] = '\0';
 	MemoryCopy(name, bpb.volumeLabel, 11);
 	Write(name);
-	Write("\" 0x");
-	WriteU32(sectors / 2 / 1024);
-	WriteLine("MB");
+	Write(" (");
+	char size[24];
+	uint32 bytes = sectors / 2 / 1024;
+	uint32 szLen = UIntLength(bytes, 10);
+	UIntToString(bytes, size, 10);
+	size[szLen] = '\0';
+	Write(size);
+	WriteLine(" MB)");
 
 	PartitionData data;
 	data.disk = disk;
